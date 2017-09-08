@@ -1,0 +1,30 @@
+From cd2344774e752895fbf6ab1abfe3204eb02679f1 Mon Sep 17 00:00:00 2001
+From: libin <bin.li@rock-chips.com>
+Date: Fri, 30 Jun 2017 16:23:39 +0800
+Subject: [PATCH 11/13] add hwc_vop_gpu skip_policy for rk3128_box
+
+Change-Id: I09c12e877a41cfe018bf3b1224be72332e030dde
+Signed-off-by: libin <bin.li@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ rk_hwcomposer.cpp |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/rk_hwcomposer.cpp b/rk_hwcomposer.cpp
+index 561f136..b351854 100755
+--- a/rk_hwcomposer.cpp
++++ b/rk_hwcomposer.cpp
+@@ -1965,6 +1965,10 @@ int try_hwc_vop_gpu_policy(void * ctx,hwc_display_contents_1_t *list)
+         return -1;
+     }
+ #endif
++#ifdef RK312X_BOX
++    if(context->IsRk3128 && context->Is_OverscanEn )
++        return 1;
++#endif
+     forceSkip = context->IsRk3126;
+ 
+     if(context->IsRk3188 && ONLY_USE_ONE_VOP == 1)
+-- 
+1.7.9.5
+

@@ -1,0 +1,27 @@
+From 3e2ca9e5428e432c1c4bf69430a0fccb91246f81 Mon Sep 17 00:00:00 2001
+From: cw <cw@rock-chips.com>
+Date: Wed, 7 Jun 2017 19:45:47 +0800
+Subject: [PATCH 3/3] abc: umask before mkdir to correct permission
+
+Change-Id: Ibeca05ccdf62f3d3d9f38c20ee637ebc1ed46733
+Signed-off-by: cw <cw@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ misc.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/misc.c b/misc.c
+index f94b28c..7015a67 100755
+--- a/misc.c
++++ b/misc.c
+@@ -313,6 +313,7 @@ static void create_new_log(void)
+  */
+ static void create_system_directory(void)
+ {
++  umask(0);
+ 	mkdir(SYSTEM_PATH, DIR_PERMIT);
+ }
+ 
+-- 
+1.7.9.5
+

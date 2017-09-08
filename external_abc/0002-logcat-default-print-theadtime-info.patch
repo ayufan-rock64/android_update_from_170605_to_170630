@@ -1,0 +1,28 @@
+From 782e7ca75ce1d31675ce871d7eaad595eb1da2cf Mon Sep 17 00:00:00 2001
+From: cw <cw@rock-chips.com>
+Date: Tue, 6 Jun 2017 16:21:30 +0800
+Subject: [PATCH 2/3] logcat default print theadtime info
+
+Change-Id: I304e0a8285e01ddf8f0543c4b8765ad94afd60da
+Signed-off-by: cw <cw@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ abc.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/abc.c b/abc.c
+index 917b9c4..1f24277 100755
+--- a/abc.c
++++ b/abc.c
+@@ -144,7 +144,7 @@ static void *abc_android(void *arg)
+ 	char logcat_cmd[128] = {0};
+         
+ 	//sprintf(logcat_cmd, "logcat -v time *:%s > %s/android", LOGCAT_PRIOR, new_log_path);
+-	sprintf(logcat_cmd, "logcat -v time > %s/android", new_log_path); //limit log size 80M
++	sprintf(logcat_cmd, "logcat > %s/android", new_log_path); //limit log size 80M
+ 	while (1) {
+ 		if (system(logcat_cmd) < 0) {
+ 			printf("Logcat command error!\nExit process...\n");
+-- 
+1.7.9.5
+

@@ -1,0 +1,181 @@
+From eb3eded9af5a7cb428d40569609a35cdca3590fa Mon Sep 17 00:00:00 2001
+From: Hao Xiaowei <hxw@rock-chips.com>
+Date: Fri, 26 May 2017 08:53:13 +0800
+Subject: [PATCH 1/8] MediaCodec:Obtain calling client info for some occasions
+
+1.Add mSoftCodecPref member for codc.
+2.Soft codec is forced when mSoftCodecPref enabled.
+
+Change-Id: I6d28c453ca84add420339366a9edee61a7d49fc5
+Signed-off-by: Hao Xiaowei <hxw@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ include/media/stagefright/ACodec.h     |    1 -
+ include/media/stagefright/CodecBase.h  |    2 ++
+ include/media/stagefright/MediaCodec.h |    2 ++
+ media/libstagefright/ACodec.cpp        |   33 ++++++++++----------------------
+ media/libstagefright/MediaCodec.cpp    |   24 +++++++++++++++++++++++
+ 5 files changed, 38 insertions(+), 24 deletions(-)
+
+diff --git a/include/media/stagefright/ACodec.h b/include/media/stagefright/ACodec.h
+index 980dff5..25f7173 100644
+--- a/include/media/stagefright/ACodec.h
++++ b/include/media/stagefright/ACodec.h
+@@ -303,7 +303,6 @@ private:
+     bool mCreateInputBuffersSuspended;
+ 
+     bool mTunneled;
+-    bool mXtsExoPlayer;
+ 
+     OMX_INDEXTYPE mDescribeColorAspectsIndex;
+     OMX_INDEXTYPE mDescribeHDRStaticInfoIndex;
+diff --git a/include/media/stagefright/CodecBase.h b/include/media/stagefright/CodecBase.h
+index be2835d..cec4a53 100644
+--- a/include/media/stagefright/CodecBase.h
++++ b/include/media/stagefright/CodecBase.h
+@@ -84,6 +84,8 @@ struct CodecBase : public AHandler, /* static */ ColorUtils {
+     virtual void signalRequestIDRFrame() = 0;
+     virtual void signalSetParameters(const sp<AMessage> &msg) = 0;
+     virtual void signalEndOfInputStream() = 0;
++    bool mSoftCodecPref;
++    void setSoftCodecPref(bool forcesoft){mSoftCodecPref = forcesoft;};
+ 
+     struct PortDescription : public RefBase {
+         virtual size_t countBuffers() = 0;
+diff --git a/include/media/stagefright/MediaCodec.h b/include/media/stagefright/MediaCodec.h
+index fe579b7..928f2d8 100644
+--- a/include/media/stagefright/MediaCodec.h
++++ b/include/media/stagefright/MediaCodec.h
+@@ -281,6 +281,8 @@ private:
+ 
+         bool reclaimResource(const Vector<MediaResource> &resources);
+ 
++        pid_t obtainPid();
++
+     private:
+         Mutex mLock;
+         sp<IResourceManagerService> mService;
+diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
+index e0bfdc6..b5ddcd8 100755
+--- a/media/libstagefright/ACodec.cpp
++++ b/media/libstagefright/ACodec.cpp
+@@ -548,25 +548,6 @@ ACodec::ACodec()
+     memset(&mLastNativeWindowCrop, 0, sizeof(mLastNativeWindowCrop));
+ 
+     changeState(mUninitializedState);
+-
+-    char processName[255];
+-    int fd;
+-    snprintf(processName, sizeof(processName), "/proc/self/cmdline");
+-    fd = open(processName, O_RDONLY);
+-    if (fd < 0) {
+-        strcpy(processName, "???");
+-    } else {
+-        int length = read(fd, processName, sizeof(processName) - 1);
+-        processName[length] = 0;
+-        ALOGI("callingProcessName:%s",processName);
+-        close(fd);
+-    }
+-    if (!strcmp(processName, "com.google.android.exoplayer.gts")) {
+-        mXtsExoPlayer = true;
+-	    ALOGI("set mXtsExoPlayer as true for gts H264DashTest");
+-    } else {
+-        mXtsExoPlayer = false;
+-    }
+ }
+ 
+ ACodec::~ACodec() {
+@@ -1128,9 +1109,8 @@ status_t ACodec::configureOutputBuffersFromNativeWindow(
+     for (OMX_U32 extraBuffers = 2 + 1; /* condition inside loop */; extraBuffers--) {
+         OMX_U32 newBufferCount =
+             def.nBufferCountMin + *minUndequeuedBuffers + extraBuffers;
+-        if(def.nBufferCountActual < newBufferCount || (mXtsExoPlayer && newBufferCount >= 20)){
+-            ALOGI("nBufferCountActual:%d  newBufferCount:%d",def.nBufferCountActual,newBufferCount);
+-            def.nBufferCountActual = mXtsExoPlayer ? MIN(20, newBufferCount) : newBufferCount;
++        if(def.nBufferCountActual < newBufferCount){
++            def.nBufferCountActual = newBufferCount;
+             err = mOMX->setParameter(
+                     mNode, OMX_IndexParamPortDefinition, &def, sizeof(def));
+ 
+@@ -1139,7 +1119,7 @@ status_t ACodec::configureOutputBuffersFromNativeWindow(
+                 break;
+             }
+ 
+-            ALOGI("[%s] setting nBufferCountActual to %u failed: %d",
++            ALOGV("[%s] setting nBufferCountActual to %u failed: %d",
+                     mComponentName.c_str(), newBufferCount, err);
+             /* exit condition */
+             if (extraBuffers == 0) {
+@@ -6718,6 +6698,11 @@ bool ACodec::UninitializedState::onAllocateComponent(const sp<AMessage> &msg) {
+         msg->setString("componentName", "OMX.rk.video_decoder.avc");
+         ALOGE("h264softdec to h264haldec when cts_gts.media.gts is true");
+     }
++    ALOGI("%s:%d mSoftCodecPref:%d componentName:%s",__FUNCTION__,__LINE__,mCodec->mSoftCodecPref,componentName.c_str());
++    if(mCodec->mSoftCodecPref && !strcmp(componentName.c_str(),"OMX.rk.video_decoder.hevc")) {
++        msg->setString("componentName", "OMX.google.hevc.decoder");
++    }
++
+     if (msg->findString("componentName", &componentName)) {
+         sp<IMediaCodecList> list = MediaCodecList::getInstance();
+         if (list != NULL && list->findCodecByName(componentName.c_str()) >= 0) {
+@@ -6744,6 +6729,8 @@ bool ACodec::UninitializedState::onAllocateComponent(const sp<AMessage> &msg) {
+     for (size_t matchIndex = 0; matchIndex < matchingCodecs.size();
+             ++matchIndex) {
+         componentName = matchingCodecs[matchIndex];
++        ALOGI("%s:%d mSoftCodecPref:%d componentName:%s",__FUNCTION__,__LINE__,mCodec->mSoftCodecPref,componentName.c_str());
++        if(mCodec->mSoftCodecPref && !strcmp(componentName.c_str(),"OMX.rk.video_decoder.hevc"))continue;
+         quirks = MediaCodecList::getQuirksFor(componentName.c_str());
+ 
+         pid_t tid = gettid();
+diff --git a/media/libstagefright/MediaCodec.cpp b/media/libstagefright/MediaCodec.cpp
+index e476424..f3a4a64 100644
+--- a/media/libstagefright/MediaCodec.cpp
++++ b/media/libstagefright/MediaCodec.cpp
+@@ -17,6 +17,8 @@
+ //#define LOG_NDEBUG 0
+ #define LOG_TAG "MediaCodec"
+ #include <inttypes.h>
++#include <unistd.h>
++#include <fcntl.h>
+ 
+ #include "include/avc_utils.h"
+ #include "include/SoftwareRenderer.h"
+@@ -168,6 +170,10 @@ bool MediaCodec::ResourceManagerServiceProxy::reclaimResource(
+     return mService->reclaimResource(mPid, resources);
+ }
+ 
++pid_t MediaCodec::ResourceManagerServiceProxy::obtainPid(){
++    return mPid;
++}
++
+ // static
+ sp<MediaCodec> MediaCodec::CreateByType(
+         const sp<ALooper> &looper, const AString &mime, bool encoder, status_t *err, pid_t pid) {
+@@ -344,6 +350,24 @@ status_t MediaCodec::init(const AString &name, bool nameIsType, bool encoder) {
+         return NAME_NOT_FOUND;
+     }
+ 
++    char processName[255];
++    int fd;
++    snprintf(processName, sizeof(processName), "/proc/%d/cmdline",mResourceManagerService->obtainPid());
++    fd = open(processName, O_RDONLY);
++    if (fd < 0) {
++        strcpy(processName, "???");
++    } else {
++        int length = read(fd, processName, sizeof(processName) - 1);
++        processName[length] = 0;
++        ALOGI("callingProcessName:%s",processName);
++        close(fd);
++    }
++    if (!strcmp(processName, "com.google.android.exoplayer.gts")
++        || !strcmp(processName, "android.security.cts")) {
++        mCodec->setSoftCodecPref(true);
++        ALOGI("set mSoftCodecPref as true");
++    }
++
+     bool secureCodec = false;
+     if (nameIsType && !strncasecmp(name.c_str(), "video/", 6)) {
+         mIsVideo = true;
+-- 
+1.7.9.5
+

@@ -1,0 +1,51 @@
+From 2c4ed909246a226e7f594c265e4f71ecdf38e35f Mon Sep 17 00:00:00 2001
+From: dzy <dzy@rock-chips.com>
+Date: Thu, 18 May 2017 15:35:14 +0800
+Subject: [PATCH 07/14] Adjust oom_adj for px3 which kernel version is out of
+ date.
+
+Change-Id: If8d3357fe8a61fbb80214c8d76c7e8fb3552d2c5
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ .../java/com/android/server/am/ProcessList.java    |   10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/services/core/java/com/android/server/am/ProcessList.java b/services/core/java/com/android/server/am/ProcessList.java
+index 475b155..a83b266 100644
+--- a/services/core/java/com/android/server/am/ProcessList.java
++++ b/services/core/java/com/android/server/am/ProcessList.java
+@@ -36,7 +36,7 @@ import android.net.LocalSocketAddress;
+ import android.net.LocalSocket;
+ import android.util.Slog;
+ import android.view.Display;
+-
++import android.os.SystemProperties;
+ /**
+  * Activity manager code dealing with processes.
+  */
+@@ -182,7 +182,7 @@ final class ProcessList {
+     // These are the various interesting memory levels that we will give to
+     // the OOM killer.  Note that the OOM killer only supports 6 slots, so we
+     // can't give it a different value for every possible kind of process.
+-    private final int[] mOomAdj = new int[] {
++    private int[] mOomAdj = new int[] {
+             FOREGROUND_APP_ADJ, VISIBLE_APP_ADJ, PERCEPTIBLE_APP_ADJ,
+             BACKUP_APP_ADJ, CACHED_APP_MIN_ADJ, CACHED_APP_MAX_ADJ
+     };
+@@ -215,6 +215,12 @@ final class ProcessList {
+         minfo.readMemInfo();
+         mTotalMemMb = minfo.getTotalSize()/(1024*1024);
+         updateOomLevels(0, 0, false);
++        if(SystemProperties.getInt("boot.car.enable",0)==1){
++           mOomAdj=new int[]{
++                   0,1,2,
++                   3,9,16
++           };
++        }
+     }
+ 
+     void applyDisplaySize(WindowManagerService wm) {
+-- 
+1.7.9.5
+

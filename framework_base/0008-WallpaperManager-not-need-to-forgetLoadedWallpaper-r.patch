@@ -1,0 +1,37 @@
+From 9627f315856bd3e5a4e144a35a5121eb31876ebd Mon Sep 17 00:00:00 2001
+From: huangjc <huangjc@rock-chips.com>
+Date: Wed, 24 May 2017 14:27:20 +0800
+Subject: [PATCH 08/14] WallpaperManager:not need to forgetLoadedWallpaper
+ repeatedly, when ImageWallpaper's offsets have
+ changed.
+
+bug:https://redmine.rockchip.com.cn/issues/124519
+
+Change-Id: I742f9c856ae0b0407cd2a70e2fbea3307223831d
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ core/java/android/app/WallpaperManager.java |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/core/java/android/app/WallpaperManager.java b/core/java/android/app/WallpaperManager.java
+index c918029..8afe03a 100644
+--- a/core/java/android/app/WallpaperManager.java
++++ b/core/java/android/app/WallpaperManager.java
+@@ -333,11 +333,13 @@ public class WallpaperManager {
+         }
+ 
+         void forgetLoadedWallpaper() {
++         if(mCachedWallpaper!=null || mDefaultWallpaper!=null){
+             synchronized (this) {
+                 mCachedWallpaper = null;
+                 mCachedWallpaperUserId = 0;
+                 mDefaultWallpaper = null;
+             }
++          }
+         }
+ 
+         private Bitmap getCurrentWallpaperLocked(int userId) {
+-- 
+1.7.9.5
+

@@ -1,0 +1,30 @@
+From 797828b592eaf4bf9e633b63437c669853cec4a6 Mon Sep 17 00:00:00 2001
+From: callen <callen.cai@rock-chips.com>
+Date: Mon, 22 May 2017 10:30:03 +0800
+Subject: [PATCH 06/14] input: set  InactivityTimeout to
+ INACTIVITY_TIMEOUT_SHORT.When mouse is pull out,
+ device can respone fast.
+
+Change-Id: I8e3383e0dc6495130352bf3a96dfb849db23b578
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ libs/input/PointerController.cpp |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libs/input/PointerController.cpp b/libs/input/PointerController.cpp
+index abef66f..2d784b5 100644
+--- a/libs/input/PointerController.cpp
++++ b/libs/input/PointerController.cpp
+@@ -100,7 +100,7 @@ PointerController::PointerController(const sp<PointerControllerPolicyInterface>&
+     mLocked.presentation = PRESENTATION_POINTER;
+     mLocked.presentationChanged = false;
+ 
+-    mLocked.inactivityTimeout = INACTIVITY_TIMEOUT_NORMAL;
++    mLocked.inactivityTimeout = INACTIVITY_TIMEOUT_SHORT;
+ 
+     mLocked.pointerFadeDirection = 0;
+     mLocked.pointerX = 0;
+-- 
+1.7.9.5
+

@@ -1,0 +1,110 @@
+From e3722e805490fa9626299b12cdbdea907746c298 Mon Sep 17 00:00:00 2001
+From: xcq <shawn.xu@rock-chips.com>
+Date: Thu, 25 May 2017 16:46:15 +0800
+Subject: [PATCH 3/6] CameraHal: v1.0x4f.0xe
+
+Change-Id: I7346d3ef3fc5969540e281e7a68ba94ee828236b
+Signed-off-by: xcq <shawn.xu@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ CameraHal/CameraAdapter.cpp    |    2 +-
+ CameraHal/CameraHal.h          |    5 ++++-
+ CameraHal/CameraIspAdapter.cpp |    2 +-
+ CameraHal/CameraSocAdapter.cpp |   22 +++++++++++++++-------
+ CameraHal/CameraUSBAdapter.cpp |    2 +-
+ 5 files changed, 22 insertions(+), 11 deletions(-)
+
+diff --git a/CameraHal/CameraAdapter.cpp b/CameraHal/CameraAdapter.cpp
+index fb00075..603b4f9 100644
+--- a/CameraHal/CameraAdapter.cpp
++++ b/CameraHal/CameraAdapter.cpp
+@@ -671,7 +671,7 @@ int CameraAdapter::getFrame(FramInfo_s** tmpFrame){
+     }
+     LOG2("%s(%d): deque a  frame %d success",__FUNCTION__,__LINE__,cfilledbuffer1.index);
+ 
+-    if(mPreviewFrameIndex++ < FILTER_FRAME_NUMBER)
++    if((mPreviewFrameIndex++ < FILTER_FRAME_NUMBER) && (!mIsCtsTest))
+     {
+         LOG2("%s:filter frame %d",__FUNCTION__,mPreviewFrameIndex);
+     	mCamDriverStreamLock.lock();
+diff --git a/CameraHal/CameraHal.h b/CameraHal/CameraHal.h
+index a4a0ab1..f7e0c8c 100755
+--- a/CameraHal/CameraHal.h
++++ b/CameraHal/CameraHal.h
+@@ -725,10 +725,13 @@ v1.0x4f.0:
+      1) 3399 android7.1 uses drm, so it's gralloc buffer handle header file is not same as android6.0,distinguish them.
+   v1.0x4f.0xd
+      1) 3288 android7.1 uses drm, so it's gralloc buffer handle header file is not same as android6.0,distinguish them.
++  v1.0x4f.0xe
++     1) soc camera no need frames filter for cts test.
++     2) cts test case support getSupportedVideoSize return null.
+ */
+ 
+ 
+-#define CONFIG_CAMERAHAL_VERSION KERNEL_VERSION(1, 0x4f, 0xd)
++#define CONFIG_CAMERAHAL_VERSION KERNEL_VERSION(1, 0x4f, 0xe)
+ 
+ 
+ /*  */
+diff --git a/CameraHal/CameraIspAdapter.cpp b/CameraHal/CameraIspAdapter.cpp
+index bf87604..2f64184 100755
+--- a/CameraHal/CameraIspAdapter.cpp
++++ b/CameraHal/CameraIspAdapter.cpp
+@@ -1058,7 +1058,7 @@ void CameraIspAdapter::initDefaultParameters(int camFd)
+ 	}
+ 
+ #if (CONFIG_CAMERA_SETVIDEOSIZE == 0)
+-     if(mIsCtsTest){
++     if(false/*mIsCtsTest*/){
+         if(gCamInfos[camFd].facing_info.facing == CAMERA_FACING_BACK){
+              //back camera, may need to manually modify based on media_profiles.xml supported.
+              params.set(CameraParameters::KEY_PREFERRED_PREVIEW_SIZE_FOR_VIDEO,"1920x1080");
+diff --git a/CameraHal/CameraSocAdapter.cpp b/CameraHal/CameraSocAdapter.cpp
+index d55d4e8..89b54e2 100644
+--- a/CameraHal/CameraSocAdapter.cpp
++++ b/CameraHal/CameraSocAdapter.cpp
+@@ -587,13 +587,21 @@ void CameraSOCAdapter::initDefaultParameters(int camFd)
+ 	 /*focus length setting ,no much meaning ,only for passing cts */
+ 	 parameterString = "35";
+ 	 params.set(CameraParameters::KEY_FOCAL_LENGTH, parameterString.string());
+-	/*horizontal angle of view setting ,no much meaning ,only for passing cts */
+-	 parameterString = "60";
+-	 params.set(CameraParameters::KEY_HORIZONTAL_VIEW_ANGLE, parameterString.string());
+-	 /*vertical angle of view setting ,no much meaning ,only for passing cts */
+-	 parameterString = "28.9";
+-	 params.set(CameraParameters::KEY_VERTICAL_VIEW_ANGLE, parameterString.string());
+-
++    if(gCamInfos[mCamId].facing_info.facing == CAMERA_FACING_FRONT){
++        /* horizontal angle of view setting ,no much meaning ,only for passing fov test */
++        parameterString = "40";
++        params.set(CameraParameters::KEY_HORIZONTAL_VIEW_ANGLE, parameterString.string());
++        /* vertical angle of view setting ,no use for fov test */
++        parameterString = "28.9";
++        params.set(CameraParameters::KEY_VERTICAL_VIEW_ANGLE, parameterString.string());
++     }else{
++        /* horizontal angle of view setting ,no much meaning ,only for passing fov test */
++        parameterString = "51";
++        params.set(CameraParameters::KEY_HORIZONTAL_VIEW_ANGLE, parameterString.string());
++        /* vertical angle of view setting ,no use for fov test */
++        parameterString = "28.9";
++        params.set(CameraParameters::KEY_VERTICAL_VIEW_ANGLE, parameterString.string());
++    }
+ 	/*quality of the EXIF thumbnail in Jpeg picture setting */
+ 	 parameterString = "50";
+ 	 params.set(CameraParameters::KEY_JPEG_THUMBNAIL_QUALITY, parameterString.string());
+diff --git a/CameraHal/CameraUSBAdapter.cpp b/CameraHal/CameraUSBAdapter.cpp
+index cb9f8c0..0ffd19f 100755
+--- a/CameraHal/CameraUSBAdapter.cpp
++++ b/CameraHal/CameraUSBAdapter.cpp
+@@ -545,7 +545,7 @@ void CameraUSBAdapter::initDefaultParameters(int camFd)
+ 	#endif
+ #endif
+ #if (CONFIG_CAMERA_SETVIDEOSIZE == 0)
+-    if(mIsCtsTest){
++    if(false/*mIsCtsTest*/){
+         if(gCamInfos[mCamId].facing_info.facing == CAMERA_FACING_BACK){
+              //back camera, may need to manually modify based on media_profiles.xml supported.
+              params.set(CameraParameters::KEY_PREFERRED_PREVIEW_SIZE_FOR_VIDEO,"1920x1080");
+-- 
+1.7.9.5
+

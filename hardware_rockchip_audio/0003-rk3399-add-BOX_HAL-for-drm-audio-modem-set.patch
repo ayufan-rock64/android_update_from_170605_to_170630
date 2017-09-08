@@ -1,0 +1,48 @@
+From 909a05c6a9abe65fccdf9e6df363ddf7e2146fc5 Mon Sep 17 00:00:00 2001
+From: wlq <wlq@rock-chips.com>
+Date: Fri, 26 May 2017 16:11:51 +0800
+Subject: [PATCH 3/4] rk3399: add BOX_HAL for drm audio modem set
+
+Change-Id: I51a635a5d50f74fb39279810f0d40562df58d5a4
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ tinyalsa_hal/audio_hw.c |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/tinyalsa_hal/audio_hw.c b/tinyalsa_hal/audio_hw.c
+index 1c5641a..a7047df 100755
+--- a/tinyalsa_hal/audio_hw.c
++++ b/tinyalsa_hal/audio_hw.c
+@@ -597,6 +597,7 @@ static int start_output_stream(struct stream_out *out)
+ 
+     if (out->device & AUDIO_DEVICE_OUT_AUX_DIGITAL) {
+         if (connect_hdmi) {
++#ifdef BOX_HAL
+ #ifdef RK3399
+             int ret = 0;
+             ret = mixer_mode_set(out);
+@@ -605,6 +606,7 @@ static int start_output_stream(struct stream_out *out)
+                 ALOGE("mixer mode set error,ret=%d!",ret);
+             }
+ #endif
++#endif
+             out->pcm[PCM_CARD_HDMI] = pcm_open(PCM_CARD_HDMI, out->pcm_device,
+                                                PCM_OUT | PCM_MONOTONIC, &out->config);
+             if (out->pcm[PCM_CARD_HDMI] &&
+@@ -1063,10 +1065,12 @@ static void do_out_standby(struct stream_out *out)
+              * necessary when restarted */
+             force_non_hdmi_out_standby(adev);
+         }
++#ifdef BOX_HAL
+ #ifdef RK3399
+         out->output_direct_mode = LPCM;
+         mixer_mode_set(out);
+ #endif
++#endif
+         if (out->device & AUDIO_DEVICE_OUT_ALL_SCO)
+             stop_bt_sco(adev);
+ 
+-- 
+1.7.9.5
+

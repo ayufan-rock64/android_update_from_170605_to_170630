@@ -1,0 +1,2056 @@
+From 538b48fc46d9d175c4afe835cf46ce0ec92ad05d Mon Sep 17 00:00:00 2001
+From: GaoFei <fly.gao@rock-chips.com>
+Date: Fri, 2 Jun 2017 16:43:11 +0800
+Subject: [PATCH 1/2] Add advanced settings for display in 3328.
+
+Change-Id: I13a13e7464a6b65a4915f55bed8e1695c110dcfc
+Signed-off-by: GaoFei <fly.gao@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ Settings/Android.mk                                |    4 +-
+ Settings/AndroidManifest.xml                       |    2 +
+ Settings/jni/Android.mk                            |   23 +
+ Settings/jni/TVInfo.cpp                            |  269 ++++++++++
+ Settings/jni/TVInfo.h                              |  549 ++++++++++++++++++++
+ Settings/jni/native.cpp                            |  225 ++++++++
+ Settings/res/drawable/layout_background.xml        |    5 +
+ .../layout/activity_advanced_display_settings.xml  |  284 ++++++++++
+ Settings/res/values-zh-rCN/strings.xml             |   10 +
+ Settings/res/values/strings.xml                    |   10 +
+ Settings/res/xml/display_device.xml                |    3 +
+ .../com/android/tv/settings/data/ConstData.java    |   12 +
+ .../display/AdvancedDisplaySettingsActivity.java   |  433 +++++++++++++++
+ .../tv/settings/display/DeviceFragment.java        |   19 +-
+ .../src/com/android/tv/settings/util/JniCall.java  |   17 +
+ 15 files changed, 1859 insertions(+), 6 deletions(-)
+ create mode 100644 Settings/jni/Android.mk
+ create mode 100644 Settings/jni/TVInfo.cpp
+ create mode 100644 Settings/jni/TVInfo.h
+ create mode 100644 Settings/jni/native.cpp
+ create mode 100644 Settings/res/drawable/layout_background.xml
+ create mode 100644 Settings/res/layout/activity_advanced_display_settings.xml
+ create mode 100644 Settings/src/com/android/tv/settings/display/AdvancedDisplaySettingsActivity.java
+ create mode 100644 Settings/src/com/android/tv/settings/util/JniCall.java
+
+diff --git a/Settings/Android.mk b/Settings/Android.mk
+index 20bdabe..fbfb1dd 100644
+--- a/Settings/Android.mk
++++ b/Settings/Android.mk
+@@ -46,7 +46,7 @@ LOCAL_AAPT_FLAGS := --auto-add-overlay \
+ LOCAL_SRC_FILES := \
+     $(call all-java-files-under, src) \
+     $(call all-Iaidl-files-under, src)
+-
++LOCAL_JNI_SHARED_LIBRARIES := libtvsettings-jni
+ include frameworks/base/packages/SettingsLib/common.mk
+-
+ include $(BUILD_PACKAGE)
++include $(LOCAL_PATH)/jni/Android.mk
+diff --git a/Settings/AndroidManifest.xml b/Settings/AndroidManifest.xml
+index ea55b1a..1088e8a 100755
+--- a/Settings/AndroidManifest.xml
++++ b/Settings/AndroidManifest.xml
+@@ -620,6 +620,8 @@
+             android:label="@string/resolutions"/>
+         <activity
+             android:name="com.android.tv.settings.display.ScreenScaleActivity"/>
++         <activity
++            android:name="com.android.tv.settings.display.AdvancedDisplaySettingsActivity"/>
+          <activity android:name="com.android.tv.settings.device.sound.VolumeSettingsActivity"
+                   android:theme="@style/Common_Activity_Dialog"/>
+          <activity android:name="com.android.tv.settings.device.sound.SoundDevicesManager"
+diff --git a/Settings/jni/Android.mk b/Settings/jni/Android.mk
+new file mode 100644
+index 0000000..8148139
+--- /dev/null
++++ b/Settings/jni/Android.mk
+@@ -0,0 +1,23 @@
++LOCAL_PATH:= $(call my-dir)
++include $(CLEAR_VARS)
++
++#LOCAL_MODULE_TAGS := samples
++
++# This is the target being built.
++LOCAL_MODULE:= libtvsettings-jni
++
++LOCAL_DEFAULT_CPP_EXTENSION := cpp
++
++# All of the source files that we will compile.
++LOCAL_SRC_FILES := \
++  native.cpp \
++  TVInfo.h \
++  TVInfo.cpp
++ 
++LOCAL_SHARED_LIBRARIES := \
++	libutils liblog
++
++#LOCAL_C_INCLUDES += \
++#	$(JNI_H_INCLUDE)
++
++include $(BUILD_SHARED_LIBRARY)
+diff --git a/Settings/jni/TVInfo.cpp b/Settings/jni/TVInfo.cpp
+new file mode 100644
+index 0000000..32d3c74
+--- /dev/null
++++ b/Settings/jni/TVInfo.cpp
+@@ -0,0 +1,269 @@
++#include <stdlib.h>
++#include <stdio.h>
++#include <math.h>
++#include <fcntl.h>
++#include <string.h>
++#define LOG_TAG "RKTVINFO"
++#include <cutils/log.h>
++
++#include "TVInfo.h"
++
++struct fb_chroma {
++        __u32 redx;     /* in fraction of 1024 */
++        __u32 greenx;
++        __u32 bluex;
++        __u32 whitex;
++        __u32 redy;
++        __u32 greeny;
++        __u32 bluey;
++        __u32 whitey;
++};
++
++struct fb_monspecs {
++        struct fb_chroma chroma;
++        struct fb_videomode *modedb;    /* mode database */
++        __u8  manufacturer[4];          /* Manufacturer */
++        __u8  monitor[14];              /* Monitor String */
++        __u8  serial_no[14];            /* Serial Number */
++        __u8  ascii[14];                /* ? */
++        __u32 modedb_len;               /* mode database length */
++        __u32 model;                    /* Monitor Model */
++        __u32 serial;                   /* Serial Number - Integer */
++        __u32 year;                     /* Year manufactured */
++        __u32 week;                     /* Week Manufactured */
++        __u32 hfmin;                    /* hfreq lower limit (Hz) */
++        __u32 hfmax;                    /* hfreq upper limit (Hz) */
++        __u32 dclkmin;                  /* pixelclock lower limit (Hz) */
++        __u32 dclkmax;                  /* pixelclock upper limit (Hz) */
++        __u16 input;                    /* display type - see FB_DISP_* */
++        __u16 dpms;                     /* DPMS support - see FB_DPMS_ */
++        __u16 signal;                   /* Signal Type - see FB_SIGNAL_* */
++        __u16 vfmin;                    /* vfreq lower limit (Hz) */
++        __u16 vfmax;                    /* vfreq upper limit (Hz) */
++        __u16 gamma;                    /* Gamma - in fractions of 100 */
++        __u16 gtf       : 1;            /* supports GTF */
++        __u16 misc;                     /* Misc flags - see FB_MISC_* */
++        __u8  version;                  /* EDID version... */
++        __u8  revision;                 /* ...and revision */
++        __u8  max_x;                    /* Maximum horizontal size (cm) */
++        __u8  max_y;                    /* Maximum vertical size (cm) */
++};
++
++static int IsHDMIConnected(void)
++{
++	FILE *fd = fopen("/sys/class/display/HDMI/connect", "r");
++	char buf[12];
++
++	if(fd) {
++		memset(buf, 0, 12);
++		fgets(buf, 12, fd);
++		fclose(fd);
++		return atoi(buf);
++	} else {
++		return 0;
++	}
++}
++
++static char *itoa(int val, char *buf, unsigned radix)
++{
++	char   *p;             
++	char   *firstdig;      
++	char	temp;           
++	unsigned   digval;
++
++	p = buf;
++	if(val <0) {
++		*p++ = '-';
++		val = (unsigned long)(-(long)val);
++	}
++	firstdig = p; 
++	do {
++	digval = (unsigned)(val % radix);
++	val /= radix;
++
++	if (digval > 9)
++	    *p++ = (char)(digval - 10 + 'a'); 
++	else
++	    *p++ = (char)(digval + '0');      
++	} while(val > 0);
++
++	*p-- = '\0 ';
++	do {
++		temp = *p;
++		*p = *firstdig;
++		*firstdig = temp;
++		--p;
++		++firstdig;        
++	} while(firstdig < p);
++	return buf;
++}
++
++int PortingOutputIoctl(HMW_HDMIRK_Ioctl_E op, HMW_VOID* arg)
++{
++	int fd;
++	struct fb_monspecs monspecs;
++	HMW_TV_INFO_S *tvinfo = (HMW_TV_INFO_S*)arg;
++
++	if (arg == NULL || !IsHDMIConnected() || op != HMW_HDMI_RK_GET_TV_INFO) {
++		ALOGE("arg %p, HDMI connect %d, OP %d", arg, IsHDMIConnected(), op);
++		return -1;
++	}
++	FILE *ffd = NULL;
++	char buf[32];
++	ffd = fopen("/sys/class/display/HDMI/debug", "r");
++	if (!ffd) {
++		ALOGE("no hdmi debug node");
++		return -1;
++	}
++	memset(buf, 0, 32);
++	fgets(buf, 32, ffd);
++	fclose(ffd);
++	ALOGD("buf %s", buf);
++	if (memcmp(buf, "EDID status:Okay", 16)) {
++		ALOGE("EDID read failed");
++		return -1;
++	}
++	fd = open("/sys/class/display/HDMI/monspecs", O_RDONLY);
++	if (fd < 0) {
++		ALOGE("open monspec failed");
++		return -1;
++	}
++	unsigned int length = lseek(fd, 0L, SEEK_END);
++	lseek(fd, 0L, SEEK_SET);
++	if (length < sizeof(struct fb_monspecs))
++		return -1;
++	int len = read(fd, &monspecs, sizeof(struct fb_monspecs));
++	close(fd);
++	if (len != sizeof(struct fb_monspecs)) {
++		ALOGE("read size is not eqaul to fb_monspecs");
++		return -1;
++	}
++	memcpy(tvinfo->manufName, monspecs.manufacturer, 4);
++	tvinfo->manufModel = monspecs.model;
++	tvinfo->manufYear = monspecs.year;
++	ALOGD("x %d y %d\n", monspecs.max_x, monspecs.max_y);
++	int size = sqrt(monspecs.max_x * monspecs.max_x + monspecs.max_y * monspecs.max_y)/2.54 + 0.5;
++	ALOGD("size %d\n", size);
++	itoa(size, (char *)tvinfo->displaySize, 10);
++	return 0;
++}
++
++enum {
++	HDMI_COLORIMETRY_EXTEND_XVYCC_601,
++	HDMI_COLORIMETRY_EXTEND_XVYCC_709,
++	HDMI_COLORIMETRY_EXTEND_SYCC_601,
++	HDMI_COLORIMETRY_EXTEND_ADOBE_YCC601,
++	HDMI_COLORIMETRY_EXTEND_ADOBE_RGB,
++	HDMI_COLORIMETRY_EXTEND_BT_2020_YCC_C, /*constant luminance*/
++	HDMI_COLORIMETRY_EXTEND_BT_2020_YCC,
++	HDMI_COLORIMETRY_EXTEND_BT_2020_RGB,
++};
++
++enum hdmi_hdr_eotf {
++	EOTF_TRADITIONAL_GMMA_SDR = 1,
++	EOFT_TRADITIONAL_GMMA_HDR = 2,
++	EOTF_ST_2084 = 4,
++};
++
++int HdmiSupportedDataSpace(void)
++{
++	FILE *ffd = NULL;
++	char buf[64];
++	int colorimetry, dataspace = 0;
++	unsigned int eotf;
++
++	if (!IsHDMIConnected())
++		return 0;
++
++	ffd = fopen("/sys/class/display/HDMI/color", "r");
++	if (!ffd) {
++		ALOGE("no hdmi color node");
++		return 0;
++	}
++	memset(buf, 0, 64);
++	while(fgets(buf, 64, ffd) != NULL) {
++		if (!memcmp(buf, "Supported Colorimetry", 21)) {
++			sscanf(buf, "Supported Colorimetry: %d", &colorimetry);
++		} else if (!memcmp(buf, "Supported EOTF", 14)) {
++			sscanf(buf, "Supported EOTF: 0x%x", &eotf);
++		}
++		memset(buf, 0, 64);
++	}
++	fclose(ffd);
++	ALOGD("colorimetry %d, eotf 0x%x\n", colorimetry, eotf);
++	if (colorimetry & HDMI_COLORIMETRY_EXTEND_BT_2020_YCC ||
++	    colorimetry & HDMI_COLORIMETRY_EXTEND_BT_2020_RGB)
++		dataspace |= HAL_DATASPACE_STANDARD_BT2020;
++	if (colorimetry & HDMI_COLORIMETRY_EXTEND_BT_2020_YCC_C)
++		dataspace |= HAL_DATASPACE_STANDARD_BT2020_CONSTANT_LUMINANCE;
++
++	if (eotf & EOTF_ST_2084)
++		dataspace |= HAL_DATASPACE_TRANSFER_ST2084;
++	return dataspace;
++}
++
++int setHdmiHDR(int enable)
++{
++	FILE *ffd = NULL;
++	char buf[64];
++	int eotf;
++
++	ffd = fopen("/sys/class/display/HDMI/color", "w");
++	if (!ffd) {
++		ALOGE("no hdmi color node");
++		return -1;
++	}
++	if (enable)
++		eotf = EOTF_ST_2084;
++	else
++		eotf = 0;
++	memset(buf, 0, 64);
++	sprintf(buf, "hdr=%d", eotf);
++	ALOGD("%s", buf);
++	fwrite(buf, 1, strlen(buf), ffd);
++	fclose(ffd);
++	return 0;
++}
++
++int HdmiSetColorimetry(android_dataspace_t Colorimetry)
++{
++	FILE *ffd = NULL;
++	char buf[64];
++	char colorimetry;
++
++	ffd = fopen("/sys/class/display/HDMI/color", "w");
++	if (!ffd) {
++		ALOGE("no hdmi color node");
++		return -1;
++	}
++	if (Colorimetry == HAL_DATASPACE_STANDARD_BT2020)
++		colorimetry = HDMI_COLORIMETRY_EXTEND_BT_2020_YCC + 3;
++	else if (Colorimetry == HAL_DATASPACE_STANDARD_BT2020_CONSTANT_LUMINANCE)
++		colorimetry = HDMI_COLORIMETRY_EXTEND_BT_2020_YCC_C + 3;
++	else
++		colorimetry = 0;
++	memset(buf, 0, 64);
++	sprintf(buf, "colorimetry=%d", colorimetry);
++	fwrite(buf, 1, strlen(buf), ffd);
++	fclose(ffd);
++	return 0;
++}
++
++#if 0
++int main(int argc, char **argv)
++{
++	HMW_TV_INFO_S TVInfo;
++
++	int rc = PortingOutputIoctl(HMW_HDMI_RK_GET_TV_INFO, &TVInfo);
++	if (!rc) {
++	printf("manufName %s\n", TVInfo.manufName);
++	printf("manufModel %d\n", TVInfo.manufModel);
++	printf("manufYear %d\n", TVInfo.manufYear);
++	printf("displaySize %s\n", TVInfo.displaySize);
++	} else
++		printf("failed\n");
++		
++	HdmiSupportedDataSpace();
++	return 0;
++}
++#endif
+diff --git a/Settings/jni/TVInfo.h b/Settings/jni/TVInfo.h
+new file mode 100644
+index 0000000..c5bfe46
+--- /dev/null
++++ b/Settings/jni/TVInfo.h
+@@ -0,0 +1,549 @@
++#ifndef __HDMITVINFO_H__
++#define __HDMITVINFO_H__
++
++
++#define HMW_UINT8 unsigned char
++#define HMW_UINT32 unsigned int
++#define HMW_VOID void
++
++//HMW_OutputIoctl_E
++typedef enum {
++    HMW_HDMI_RK_UNKNOW,   /*#HMW_OutputEvent_F#*/   /*set event callback*/
++    HMW_HDMI_RK_GET_TV_INFO,
++    HMW_HDMI_RK_BUTT
++} HMW_HDMIRK_Ioctl_E; 
++
++//HMW_TV_INFO_S
++
++typedef struct {
++
++    HMW_UINT8  manufName[4];   //从HDMI的EDID信息中获取（接收端，如显示器）的厂商ID，如果HDMI未连接或获取不到则不填
++    HMW_UINT32 manufModel;    //从HDMI的EDID信息中获取（接收端，如显示器）的产品ID，如果HDMI未连接或获取不到则不填
++    HMW_UINT32 manufYear;     //从HDMI的EDID信息中获取（接收端，如显示器）的生产日志，如果HDMI未连接或获取不到则不填
++    HMW_UINT8  displaySize[8];  //屏幕尺寸
++} HMW_TV_INFO_S;
++
++/**
++ * Dataspace Definitions
++ * ======================
++ *
++ * Dataspace is the definition of how pixel values should be interpreted.
++ *
++ * For many formats, this is the colorspace of the image data, which includes
++ * primaries (including white point) and the transfer characteristic function,
++ * which describes both gamma curve and numeric range (within the bit depth).
++ *
++ * Other dataspaces include depth measurement data from a depth camera.
++ *
++ * A dataspace is comprised of a number of fields.
++ *
++ * Version
++ * --------
++ * The top 2 bits represent the revision of the field specification. This is
++ * currently always 0.
++ *
++ *
++ * bits    31-30 29                      -                          0
++ *        +-----+----------------------------------------------------+
++ * fields | Rev |            Revision specific fields                |
++ *        +-----+----------------------------------------------------+
++ *
++ * Field layout for version = 0:
++ * ----------------------------
++ *
++ * A dataspace is comprised of the following fields:
++ *      Standard
++ *      Transfer function
++ *      Range
++ *
++ * bits    31-30 29-27 26 -  22 21 -  16 15             -           0
++ *        +-----+-----+--------+--------+----------------------------+
++ * fields |  0  |Range|Transfer|Standard|    Legacy and custom       |
++ *        +-----+-----+--------+--------+----------------------------+
++ *          VV    RRR   TTTTT    SSSSSS    LLLLLLLL       LLLLLLLL
++ *
++ * If range, transfer and standard fields are all 0 (e.g. top 16 bits are
++ * all zeroes), the bottom 16 bits contain either a legacy dataspace value,
++ * or a custom value.
++ */
++
++typedef enum android_dataspace {
++    /*
++     * Default-assumption data space, when not explicitly specified.
++     *
++     * It is safest to assume the buffer is an image with sRGB primaries and
++     * encoding ranges, but the consumer and/or the producer of the data may
++     * simply be using defaults. No automatic gamma transform should be
++     * expected, except for a possible display gamma transform when drawn to a
++     * screen.
++     */
++    HAL_DATASPACE_UNKNOWN = 0x0,
++
++    /*
++     * Arbitrary dataspace with manually defined characteristics.  Definition
++     * for colorspaces or other meaning must be communicated separately.
++     *
++     * This is used when specifying primaries, transfer characteristics,
++     * etc. separately.
++     *
++     * A typical use case is in video encoding parameters (e.g. for H.264),
++     * where a colorspace can have separately defined primaries, transfer
++     * characteristics, etc.
++     */
++    HAL_DATASPACE_ARBITRARY = 0x1,
++
++    /*
++     * Color-description aspects
++     *
++     * The following aspects define various characteristics of the color
++     * specification. These represent bitfields, so that a data space value
++     * can specify each of them independently.
++     */
++
++    HAL_DATASPACE_STANDARD_SHIFT = 16,
++
++    /*
++     * Standard aspect
++     *
++     * Defines the chromaticity coordinates of the source primaries in terms of
++     * the CIE 1931 definition of x and y specified in ISO 11664-1.
++     */
++    HAL_DATASPACE_STANDARD_MASK = 63 << HAL_DATASPACE_STANDARD_SHIFT,  // 0x3F
++
++    /*
++     * Chromacity coordinates are unknown or are determined by the application.
++     * Implementations shall use the following suggested standards:
++     *
++     * All YCbCr formats: BT709 if size is 720p or larger (since most video
++     *                    content is letterboxed this corresponds to width is
++     *                    1280 or greater, or height is 720 or greater).
++     *                    BT601_625 if size is smaller than 720p or is JPEG.
++     * All RGB formats:   BT709.
++     *
++     * For all other formats standard is undefined, and implementations should use
++     * an appropriate standard for the data represented.
++     */
++    HAL_DATASPACE_STANDARD_UNSPECIFIED = 0 << HAL_DATASPACE_STANDARD_SHIFT,
++
++    /*
++     * Primaries:       x       y
++     *  green           0.300   0.600
++     *  blue            0.150   0.060
++     *  red             0.640   0.330
++     *  white (D65)     0.3127  0.3290
++     *
++     * Use the unadjusted KR = 0.2126, KB = 0.0722 luminance interpretation
++     * for RGB conversion.
++     */
++    HAL_DATASPACE_STANDARD_BT709 = 1 << HAL_DATASPACE_STANDARD_SHIFT,
++
++    /*
++     * Primaries:       x       y
++     *  green           0.290   0.600
++     *  blue            0.150   0.060
++     *  red             0.640   0.330
++     *  white (D65)     0.3127  0.3290
++     *
++     *  KR = 0.299, KB = 0.114. This adjusts the luminance interpretation
++     *  for RGB conversion from the one purely determined by the primaries
++     *  to minimize the color shift into RGB space that uses BT.709
++     *  primaries.
++     */
++    HAL_DATASPACE_STANDARD_BT601_625 = 2 << HAL_DATASPACE_STANDARD_SHIFT,
++
++    /*
++     * Primaries:       x       y
++     *  green           0.290   0.600
++     *  blue            0.150   0.060
++     *  red             0.640   0.330
++     *  white (D65)     0.3127  0.3290
++     *
++     * Use the unadjusted KR = 0.222, KB = 0.071 luminance interpretation
++     * for RGB conversion.
++     */
++    HAL_DATASPACE_STANDARD_BT601_625_UNADJUSTED = 3 << HAL_DATASPACE_STANDARD_SHIFT,
++
++    /*
++     * Primaries:       x       y
++     *  green           0.310   0.595
++     *  blue            0.155   0.070
++     *  red             0.630   0.340
++     *  white (D65)     0.3127  0.3290
++     *
++     *  KR = 0.299, KB = 0.114. This adjusts the luminance interpretation
++     *  for RGB conversion from the one purely determined by the primaries
++     *  to minimize the color shift into RGB space that uses BT.709
++     *  primaries.
++     */
++    HAL_DATASPACE_STANDARD_BT601_525 = 4 << HAL_DATASPACE_STANDARD_SHIFT,
++
++    /*
++     * Primaries:       x       y
++     *  green           0.310   0.595
++     *  blue            0.155   0.070
++     *  red             0.630   0.340
++     *  white (D65)     0.3127  0.3290
++     *
++     * Use the unadjusted KR = 0.212, KB = 0.087 luminance interpretation
++     * for RGB conversion (as in SMPTE 240M).
++     */
++    HAL_DATASPACE_STANDARD_BT601_525_UNADJUSTED = 5 << HAL_DATASPACE_STANDARD_SHIFT,
++
++    /*
++     * Primaries:       x       y
++     *  green           0.170   0.797
++     *  blue            0.131   0.046
++     *  red             0.708   0.292
++     *  white (D65)     0.3127  0.3290
++     *
++     * Use the unadjusted KR = 0.2627, KB = 0.0593 luminance interpretation
++     * for RGB conversion.
++     */
++    HAL_DATASPACE_STANDARD_BT2020 = 6 << HAL_DATASPACE_STANDARD_SHIFT,
++
++    /*
++     * Primaries:       x       y
++     *  green           0.170   0.797
++     *  blue            0.131   0.046
++     *  red             0.708   0.292
++     *  white (D65)     0.3127  0.3290
++     *
++     * Use the unadjusted KR = 0.2627, KB = 0.0593 luminance interpretation
++     * for RGB conversion using the linear domain.
++     */
++    HAL_DATASPACE_STANDARD_BT2020_CONSTANT_LUMINANCE = 7 << HAL_DATASPACE_STANDARD_SHIFT,
++
++    /*
++     * Primaries:       x      y
++     *  green           0.21   0.71
++     *  blue            0.14   0.08
++     *  red             0.67   0.33
++     *  white (C)       0.310  0.316
++     *
++     * Use the unadjusted KR = 0.30, KB = 0.11 luminance interpretation
++     * for RGB conversion.
++     */
++    HAL_DATASPACE_STANDARD_BT470M = 8 << HAL_DATASPACE_STANDARD_SHIFT,
++
++    /*
++     * Primaries:       x       y
++     *  green           0.243   0.692
++     *  blue            0.145   0.049
++     *  red             0.681   0.319
++     *  white (C)       0.310   0.316
++     *
++     * Use the unadjusted KR = 0.254, KB = 0.068 luminance interpretation
++     * for RGB conversion.
++     */
++    HAL_DATASPACE_STANDARD_FILM = 9 << HAL_DATASPACE_STANDARD_SHIFT,
++
++    HAL_DATASPACE_TRANSFER_SHIFT = 22,
++
++    /*
++     * Transfer aspect
++     *
++     * Transfer characteristics are the opto-electronic transfer characteristic
++     * at the source as a function of linear optical intensity (luminance).
++     *
++     * For digital signals, E corresponds to the recorded value. Normally, the
++     * transfer function is applied in RGB space to each of the R, G and B
++     * components independently. This may result in color shift that can be
++     * minized by applying the transfer function in Lab space only for the L
++     * component. Implementation may apply the transfer function in RGB space
++     * for all pixel formats if desired.
++     */
++
++    HAL_DATASPACE_TRANSFER_MASK = 31 << HAL_DATASPACE_TRANSFER_SHIFT,  // 0x1F
++
++    /*
++     * Transfer characteristics are unknown or are determined by the
++     * application.
++     *
++     * Implementations should use the following transfer functions:
++     *
++     * For YCbCr formats: use HAL_DATASPACE_TRANSFER_SMPTE_170M
++     * For RGB formats: use HAL_DATASPACE_TRANSFER_SRGB
++     *
++     * For all other formats transfer function is undefined, and implementations
++     * should use an appropriate standard for the data represented.
++     */
++    HAL_DATASPACE_TRANSFER_UNSPECIFIED = 0 << HAL_DATASPACE_TRANSFER_SHIFT,
++
++    /*
++     * Transfer characteristic curve:
++     *  E = L
++     *      L - luminance of image 0 <= L <= 1 for conventional colorimetry
++     *      E - corresponding electrical signal
++     */
++    HAL_DATASPACE_TRANSFER_LINEAR = 1 << HAL_DATASPACE_TRANSFER_SHIFT,
++
++    /*
++     * Transfer characteristic curve:
++     *
++     * E = 1.055 * L^(1/2.4) - 0.055  for 0.0031308 <= L <= 1
++     *   = 12.92 * L                  for 0 <= L < 0.0031308
++     *     L - luminance of image 0 <= L <= 1 for conventional colorimetry
++     *     E - corresponding electrical signal
++     */
++    HAL_DATASPACE_TRANSFER_SRGB = 2 << HAL_DATASPACE_TRANSFER_SHIFT,
++
++    /*
++     * BT.601 525, BT.601 625, BT.709, BT.2020
++     *
++     * Transfer characteristic curve:
++     *  E = 1.099 * L ^ 0.45 - 0.099  for 0.018 <= L <= 1
++     *    = 4.500 * L                 for 0 <= L < 0.018
++     *      L - luminance of image 0 <= L <= 1 for conventional colorimetry
++     *      E - corresponding electrical signal
++     */
++    HAL_DATASPACE_TRANSFER_SMPTE_170M = 3 << HAL_DATASPACE_TRANSFER_SHIFT,
++
++    /*
++     * Assumed display gamma 2.2.
++     *
++     * Transfer characteristic curve:
++     *  E = L ^ (1/2.2)
++     *      L - luminance of image 0 <= L <= 1 for conventional colorimetry
++     *      E - corresponding electrical signal
++     */
++    HAL_DATASPACE_TRANSFER_GAMMA2_2 = 4 << HAL_DATASPACE_TRANSFER_SHIFT,
++
++    /*
++     *  display gamma 2.8.
++     *
++     * Transfer characteristic curve:
++     *  E = L ^ (1/2.8)
++     *      L - luminance of image 0 <= L <= 1 for conventional colorimetry
++     *      E - corresponding electrical signal
++     */
++    HAL_DATASPACE_TRANSFER_GAMMA2_8 = 5 << HAL_DATASPACE_TRANSFER_SHIFT,
++
++    /*
++     * SMPTE ST 2084
++     *
++     * Transfer characteristic curve:
++     *  E = ((c1 + c2 * L^n) / (1 + c3 * L^n)) ^ m
++     *  c1 = c3 - c2 + 1 = 3424 / 4096 = 0.8359375
++     *  c2 = 32 * 2413 / 4096 = 18.8515625
++     *  c3 = 32 * 2392 / 4096 = 18.6875
++     *  m = 128 * 2523 / 4096 = 78.84375
++     *  n = 0.25 * 2610 / 4096 = 0.1593017578125
++     *      L - luminance of image 0 <= L <= 1 for HDR colorimetry.
++     *          L = 1 corresponds to 10000 cd/m2
++     *      E - corresponding electrical signal
++     */
++    HAL_DATASPACE_TRANSFER_ST2084 = 6 << HAL_DATASPACE_TRANSFER_SHIFT,
++
++    /*
++     * ARIB STD-B67 Hybrid Log Gamma
++     *
++     * Transfer characteristic curve:
++     *  E = r * L^0.5                 for 0 <= L <= 1
++     *    = a * ln(L - b) + c         for 1 < L
++     *  a = 0.17883277
++     *  b = 0.28466892
++     *  c = 0.55991073
++     *  r = 0.5
++     *      L - luminance of image 0 <= L for HDR colorimetry. L = 1 corresponds
++     *          to reference white level of 100 cd/m2
++     *      E - corresponding electrical signal
++     */
++    HAL_DATASPACE_TRANSFER_HLG = 7 << HAL_DATASPACE_TRANSFER_SHIFT,
++
++    HAL_DATASPACE_RANGE_SHIFT = 27,
++
++    /*
++     * Range aspect
++     *
++     * Defines the range of values corresponding to the unit range of 0-1.
++     * This is defined for YCbCr only, but can be expanded to RGB space.
++     */
++    HAL_DATASPACE_RANGE_MASK = 7 << HAL_DATASPACE_RANGE_SHIFT,  // 0x7
++
++    /*
++     * Range is unknown or are determined by the application.  Implementations
++     * shall use the following suggested ranges:
++     *
++     * All YCbCr formats: limited range.
++     * All RGB or RGBA formats (including RAW and Bayer): full range.
++     * All Y formats: full range
++     *
++     * For all other formats range is undefined, and implementations should use
++     * an appropriate range for the data represented.
++     */
++    HAL_DATASPACE_RANGE_UNSPECIFIED = 0 << HAL_DATASPACE_RANGE_SHIFT,
++
++    /*
++     * Full range uses all values for Y, Cb and Cr from
++     * 0 to 2^b-1, where b is the bit depth of the color format.
++     */
++    HAL_DATASPACE_RANGE_FULL = 1 << HAL_DATASPACE_RANGE_SHIFT,
++
++    /*
++     * Limited range uses values 16/256*2^b to 235/256*2^b for Y, and
++     * 1/16*2^b to 15/16*2^b for Cb, Cr, R, G and B, where b is the bit depth of
++     * the color format.
++     *
++     * E.g. For 8-bit-depth formats:
++     * Luma (Y) samples should range from 16 to 235, inclusive
++     * Chroma (Cb, Cr) samples should range from 16 to 240, inclusive
++     *
++     * For 10-bit-depth formats:
++     * Luma (Y) samples should range from 64 to 940, inclusive
++     * Chroma (Cb, Cr) samples should range from 64 to 960, inclusive
++     */
++    HAL_DATASPACE_RANGE_LIMITED = 2 << HAL_DATASPACE_RANGE_SHIFT,
++
++    /*
++     * Legacy dataspaces
++     */
++
++    /*
++     * sRGB linear encoding:
++     *
++     * The red, green, and blue components are stored in sRGB space, but
++     * are linear, not gamma-encoded.
++     * The RGB primaries and the white point are the same as BT.709.
++     *
++     * The values are encoded using the full range ([0,255] for 8-bit) for all
++     * components.
++     */
++    HAL_DATASPACE_SRGB_LINEAR = 0x200, // deprecated, use HAL_DATASPACE_V0_SRGB_LINEAR
++
++    HAL_DATASPACE_V0_SRGB_LINEAR = HAL_DATASPACE_STANDARD_BT709 |
++            HAL_DATASPACE_TRANSFER_LINEAR | HAL_DATASPACE_RANGE_FULL,
++
++
++    /*
++     * sRGB gamma encoding:
++     *
++     * The red, green and blue components are stored in sRGB space, and
++     * converted to linear space when read, using the SRGB transfer function
++     * for each of the R, G and B components. When written, the inverse
++     * transformation is performed.
++     *
++     * The alpha component, if present, is always stored in linear space and
++     * is left unmodified when read or written.
++     *
++     * Use full range and BT.709 standard.
++     */
++    HAL_DATASPACE_SRGB = 0x201, // deprecated, use HAL_DATASPACE_V0_SRGB
++
++    HAL_DATASPACE_V0_SRGB = HAL_DATASPACE_STANDARD_BT709 |
++            HAL_DATASPACE_TRANSFER_SRGB | HAL_DATASPACE_RANGE_FULL,
++
++
++    /*
++     * YCbCr Colorspaces
++     * -----------------
++     *
++     * Primaries are given using (x,y) coordinates in the CIE 1931 definition
++     * of x and y specified by ISO 11664-1.
++     *
++     * Transfer characteristics are the opto-electronic transfer characteristic
++     * at the source as a function of linear optical intensity (luminance).
++     */
++
++    /*
++     * JPEG File Interchange Format (JFIF)
++     *
++     * Same model as BT.601-625, but all values (Y, Cb, Cr) range from 0 to 255
++     *
++     * Use full range, BT.601 transfer and BT.601_625 standard.
++     */
++    HAL_DATASPACE_JFIF = 0x101, // deprecated, use HAL_DATASPACE_V0_JFIF
++
++    HAL_DATASPACE_V0_JFIF = HAL_DATASPACE_STANDARD_BT601_625 |
++            HAL_DATASPACE_TRANSFER_SMPTE_170M | HAL_DATASPACE_RANGE_FULL,
++
++    /*
++     * ITU-R Recommendation 601 (BT.601) - 625-line
++     *
++     * Standard-definition television, 625 Lines (PAL)
++     *
++     * Use limited range, BT.601 transfer and BT.601_625 standard.
++     */
++    HAL_DATASPACE_BT601_625 = 0x102, // deprecated, use HAL_DATASPACE_V0_BT601_625
++
++    HAL_DATASPACE_V0_BT601_625 = HAL_DATASPACE_STANDARD_BT601_625 |
++            HAL_DATASPACE_TRANSFER_SMPTE_170M | HAL_DATASPACE_RANGE_LIMITED,
++
++
++    /*
++     * ITU-R Recommendation 601 (BT.601) - 525-line
++     *
++     * Standard-definition television, 525 Lines (NTSC)
++     *
++     * Use limited range, BT.601 transfer and BT.601_525 standard.
++     */
++    HAL_DATASPACE_BT601_525 = 0x103, // deprecated, use HAL_DATASPACE_V0_BT601_525
++
++    HAL_DATASPACE_V0_BT601_525 = HAL_DATASPACE_STANDARD_BT601_525 |
++            HAL_DATASPACE_TRANSFER_SMPTE_170M | HAL_DATASPACE_RANGE_LIMITED,
++
++    /*
++     * ITU-R Recommendation 709 (BT.709)
++     *
++     * High-definition television
++     *
++     * Use limited range, BT.709 transfer and BT.709 standard.
++     */
++    HAL_DATASPACE_BT709 = 0x104, // deprecated, use HAL_DATASPACE_V0_BT709
++
++    HAL_DATASPACE_V0_BT709 = HAL_DATASPACE_STANDARD_BT709 |
++            HAL_DATASPACE_TRANSFER_SMPTE_170M | HAL_DATASPACE_RANGE_LIMITED,
++
++    /*
++     * Data spaces for non-color formats
++     */
++
++    /*
++     * The buffer contains depth ranging measurements from a depth camera.
++     * This value is valid with formats:
++     *    HAL_PIXEL_FORMAT_Y16: 16-bit samples, consisting of a depth measurement
++     *       and an associated confidence value. The 3 MSBs of the sample make
++     *       up the confidence value, and the low 13 LSBs of the sample make up
++     *       the depth measurement.
++     *       For the confidence section, 0 means 100% confidence, 1 means 0%
++     *       confidence. The mapping to a linear float confidence value between
++     *       0.f and 1.f can be obtained with
++     *         float confidence = (((depthSample >> 13) - 1) & 0x7) / 7.0f;
++     *       The depth measurement can be extracted simply with
++     *         uint16_t range = (depthSample & 0x1FFF);
++     *    HAL_PIXEL_FORMAT_BLOB: A depth point cloud, as
++     *       a variable-length float (x,y,z, confidence) coordinate point list.
++     *       The point cloud will be represented with the android_depth_points
++     *       structure.
++     */
++    HAL_DATASPACE_DEPTH = 0x1000
++
++} android_dataspace_t;
++
++/*
++ * Supported HDR formats. Must be kept in sync with equivalents in Display.java.
++ */
++typedef enum android_hdr {
++    /* Device supports Dolby Vision HDR */
++    HAL_HDR_DOLBY_VISION = 1,
++
++    /* Device supports HDR10 */
++    HAL_HDR_HDR10 = 2,
++
++    /* Device supports hybrid log-gamma HDR */
++    HAL_HDR_HLG = 3
++} android_hdr_t;
++
++struct HDMITVInfo {
++	android_hdr_t hdrtype;
++	android_dataspace_t dataspace;
++};
++
++int PortingOutputIoctl(HMW_HDMIRK_Ioctl_E op, HMW_VOID* arg);
++
++/* Get TV supported dataspace, value is defined by android_dataspace_t */
++int HdmiSupportedDataSpace(void);
++
++int setHdmiHDR(int enable);
++
++int HdmiSetColorimetry(android_dataspace_t Colorimetry);
++#endif
+\ No newline at end of file
+diff --git a/Settings/jni/native.cpp b/Settings/jni/native.cpp
+new file mode 100644
+index 0000000..4478c96
+--- /dev/null
++++ b/Settings/jni/native.cpp
+@@ -0,0 +1,225 @@
++/*
++ * Copyright (C) 2008 The Android Open Source Project
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#define LOG_TAG "tvsettings.native.cpp"
++#include <utils/Log.h>
++#include <stdio.h>
++#include "jni.h"
++#include <math.h>
++#include "TVInfo.h"
++#define MIN(a,b)                        ((a) <= (b) ? (a):(b))
++#define MAX(a,b)                        ((a) >= (b) ? (a):(b))
++#define ROUND(a)						(int)(a+0.5)
++static int bt1886eotf(int* segYn, double maxLumi, double minLumi)
++{
++	
++	double Lw, Lb;
++	double r = 2.4;
++	double a, b;
++	
++	double xIndex;
++	double yIndex;
++
++	unsigned char i;
++	int xBitmask, yBitmask;
++	int segXn[65] = {0, 
++		512,	1024,	1536,	2048,	2560,	3072,	3584,	4096,
++		4608,	5120,	5632,	6144,	6656,	7168,	7680,	8192,
++		8704,	9216,   9728,	10240,	10496,	10752,	11008,	11264,
++		11520,	11776,	12032,	12288,	12544,	12800,	13056,	13312,
++		13440,	13568,	13696,	13824,	13952,	14080,	14208,	14336,
++		14464,	14592,	14720,	14848,	14976,	15104,	15232,	15360,
++		15424,	15488,	15552,	15616,	15680,	15744,	15808,	15872,
++		15936,	16000,	16064,	16128,	16192,	16256,	16320,	16383};
++
++
++	Lw = maxLumi / 10000;
++	Lb = minLumi / 10000;
++
++	a = pow((pow(Lw, 1/r) - pow(Lb, 1/r)), r);
++	b = pow(Lb, 1/r) / (pow(Lw, 1/r) - pow(Lb, 1/r));
++
++	xBitmask = 16383;
++	yBitmask = 262143;
++	for (i = 0; i < 65; i++)
++	{
++		xIndex = segXn[i]*1.0/xBitmask;
++		xIndex = MAX(xIndex+b, 0);
++		yIndex = a * pow(xIndex, r) * yBitmask;
++		segYn[i] = ROUND(yIndex);
++		
++	}
++	return 0;
++}
++
++
++static int st2084oetf(int* segYn, double coef, double nFac)
++{
++	int segXn[65] = {0,
++		1,	2,	4,	8,	16,	24,	32,	64,
++		96,	128,	256,	384,	512,	640,	768,	896,
++		1024,	1280,	1536,	1792,	2048,	2304,	2560,	2816,
++		3072,	3584,	4096,	4608,	5120,	6144,	7168,	8192,
++		9216,	10240,	11264,	12288,	14336,	16384,	18432,	20480,
++		22528,	24576,	26624,	28672,	30720,	32768,	36864,	40960,
++		45056,	49152,	53248,	57344,	61440,	65536,	73728,	81920,
++		90112,	98304,	114688,	131072,	163840,	196608,	229376,	262143
++	};
++
++	int xBitmask, yBitmask;
++	unsigned char i;
++
++	double xIndex, yIndex;
++	double c1, c2, c3;
++	double m, n;
++
++	c1 = 3424 * 1.0 / 4096;
++	c2 = 2413 * 1.0 / 4096 * 32;
++	c3 = 2392 * 1.0 / 4096 * 32;
++	m = 2523 * 1.0 / 4096 * 128;
++	n = 2610 * 1.0 / 4096 * (1.0/nFac);
++	
++	xBitmask = 262143;
++	yBitmask = 16383;
++
++	for (i = 0; i < 65; i++)
++	{
++		xIndex = segXn[i] * 1.0 / xBitmask;
++		yIndex = coef * pow((c1 + c2*pow(xIndex, n))/(1 + c3*pow(xIndex, n)), m);
++		yIndex = ROUND(yIndex * yBitmask);
++		segYn[i] = MIN(yIndex, yBitmask);
++	}
++	return 0;
++}
++
++
++static jintArray get(JNIEnv *env, jobject thiz, jdouble x, jdouble y) {
++    ALOGI("%lf : %lf", x, y);
++	
++    jintArray intArray = env->NewIntArray(65);
++    jint* result = new jint[65];
++	bt1886eotf(result,x,y);
++    env->SetIntArrayRegion(intArray, 0, 65, result);
++    delete []result;
++    return intArray;
++}
++
++
++static jintArray getOther(JNIEnv *env, jobject thiz, jdouble x, jdouble y) {
++    ALOGI("%lf : %lf", x, y);
++    jintArray intArray = env->NewIntArray(65);
++    jint* result = new jint[65];
++	st2084oetf(result,x,y);
++    env->SetIntArrayRegion(intArray, 0, 65, result);
++    delete []result;
++    return intArray;
++}
++
++
++static jboolean isSupportHDR(JNIEnv *env, jobject thiz){
++	int supportType = HdmiSupportedDataSpace();
++	ALOGI("%d", HdmiSupportedDataSpace());
++	return (supportType & HAL_DATASPACE_TRANSFER_ST2084) != 0;
++}
++
++
++static void setHDREnable(JNIEnv *env, jobject thiz, jint enable){
++	ALOGI("setHDREnable");
++	setHdmiHDR(enable);
++}
++
++static const char *classPathName = "com/android/tv/settings/util/JniCall";
++
++static JNINativeMethod methods[] = {
++  {"get", "(DD)[I", (void*)get },
++  {"getOther", "(DD)[I", (void*)getOther },
++  {"isSupportHDR", "()Z", (void*)isSupportHDR },
++  {"setHDREnable", "(I)V", (void*)setHDREnable },
++};
++
++/*
++ * Register several native methods for one class.
++ */
++static int registerNativeMethods(JNIEnv* env, const char* className,
++    JNINativeMethod* gMethods, int numMethods)
++{
++    jclass clazz;
++
++    clazz = env->FindClass(className);
++    if (clazz == NULL) {
++        ALOGE("Native registration unable to find class '%s'", className);
++        return JNI_FALSE;
++    }
++    if (env->RegisterNatives(clazz, gMethods, numMethods) < 0) {
++        ALOGE("RegisterNatives failed for '%s'", className);
++        return JNI_FALSE;
++    }
++
++    return JNI_TRUE;
++}
++
++/*
++ * Register native methods for all classes we know about.
++ *
++ * returns JNI_TRUE on success.
++ */
++static int registerNatives(JNIEnv* env)
++{
++  if (!registerNativeMethods(env, classPathName,
++                 methods, sizeof(methods) / sizeof(methods[0]))) {
++    return JNI_FALSE;
++  }
++
++  return JNI_TRUE;
++}
++
++
++// ----------------------------------------------------------------------------
++
++/*
++ * This is called by the VM when the shared library is first loaded.
++ */
++ 
++typedef union {
++    JNIEnv* env;
++    void* venv;
++} UnionJNIEnvToVoid;
++
++jint JNI_OnLoad(JavaVM* vm, void* reserved)
++{
++    UnionJNIEnvToVoid uenv;
++    uenv.venv = NULL;
++    jint result = -1;
++    JNIEnv* env = NULL;
++    
++    ALOGI("JNI_OnLoad");
++
++    if (vm->GetEnv(&uenv.venv, JNI_VERSION_1_4) != JNI_OK) {
++        ALOGE("ERROR: GetEnv failed");
++        goto bail;
++    }
++    env = uenv.env;
++
++    if (registerNatives(env) != JNI_TRUE) {
++        ALOGE("ERROR: registerNatives failed");
++        goto bail;
++    }
++    
++    result = JNI_VERSION_1_4;
++    
++bail:
++    return result;
++}
+diff --git a/Settings/res/drawable/layout_background.xml b/Settings/res/drawable/layout_background.xml
+new file mode 100644
+index 0000000..bbc6a71
+--- /dev/null
++++ b/Settings/res/drawable/layout_background.xml
+@@ -0,0 +1,5 @@
++<?xml version="1.0" encoding="utf-8"?>
++<shape xmlns:android="http://schemas.android.com/apk/res/android" >
++    <solid android:color="@android:color/transparent"/>
++    <stroke android:width="2dp" android:color="@android:color/holo_green_dark"/>
++</shape>
+\ No newline at end of file
+diff --git a/Settings/res/layout/activity_advanced_display_settings.xml b/Settings/res/layout/activity_advanced_display_settings.xml
+new file mode 100644
+index 0000000..37e1767
+--- /dev/null
++++ b/Settings/res/layout/activity_advanced_display_settings.xml
+@@ -0,0 +1,284 @@
++<?xml version="1.0" encoding="utf-8"?>
++<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    android:orientation="vertical" >
++
++    <LinearLayout
++        android:id="@+id/layout_bcsh"
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:background="@drawable/layout_background"
++        android:orientation="vertical"
++        android:padding="10dp" >
++
++        <TextView
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:text="@string/bcsh"
++            android:textSize="20sp" 
++            android:textColor="@android:color/white"/>
++
++        <LinearLayout
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:orientation="horizontal"
++            android:paddingTop="10dp" >
++
++            <TextView
++                android:layout_width="100dp"
++                android:layout_height="wrap_content"
++                android:text="@string/brightness" 
++                android:textColor="@android:color/white"/>
++
++            <SeekBar
++                android:id="@+id/brightness"
++                android:layout_width="0dp"
++                android:layout_height="wrap_content"
++                android:layout_weight="1"
++                android:max="63"/>
++
++            <TextView
++                android:id="@+id/text_bcsh_brightness_num"
++                android:layout_width="50dp"
++                android:layout_height="wrap_content"
++                android:textColor="@android:color/white" />
++        </LinearLayout>
++
++        <LinearLayout
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:orientation="horizontal"
++            android:paddingTop="10dp" >
++
++            <TextView
++               android:layout_width="100dp"
++                android:layout_height="wrap_content"
++                android:text="@string/contrast" 
++                android:textColor="@android:color/white"/>
++
++            <SeekBar
++                android:id="@+id/contrast"
++                android:layout_width="0dp"
++                android:layout_height="wrap_content"
++                android:layout_weight="1"
++                android:max="1992"
++                android:progress="1000" />
++
++            <TextView
++                android:id="@+id/text_bcsh_contrast_num"
++                android:layout_width="50dp"
++                android:textColor="@android:color/white"
++                android:layout_height="wrap_content" />
++        </LinearLayout>
++
++        <LinearLayout
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:orientation="horizontal"
++            android:paddingTop="10dp" >
++
++            <TextView
++                android:layout_width="100dp"
++                android:layout_height="wrap_content"
++                android:text="@string/saturation" 
++                android:textColor="@android:color/white"/>
++
++            <SeekBar
++                android:id="@+id/saturation"
++                android:layout_width="0dp"
++                android:layout_height="wrap_content"
++                android:layout_weight="1"
++                android:max="1992"
++                android:progress="1000" />
++
++            <TextView
++                android:id="@+id/text_bcsh_saturation_num"
++                android:layout_width="50dp"
++                android:textColor="@android:color/white"
++                android:layout_height="wrap_content" />
++        </LinearLayout>
++
++        <LinearLayout
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:orientation="horizontal"
++            android:paddingTop="10dp" >
++
++            <TextView
++                android:layout_width="100dp"
++                android:layout_height="wrap_content"
++                android:text="@string/tone" 
++                android:textColor="@android:color/white"/>
++
++            <SeekBar
++                android:id="@+id/tone"
++                android:layout_width="0dp"
++                android:layout_height="wrap_content"
++                android:layout_weight="1"
++                android:max="60"
++                android:progress="30" />
++
++            <TextView
++                android:id="@+id/text_bcsh_tone_num"
++                android:layout_width="50dp"
++                android:textColor="@android:color/white"
++                android:layout_height="wrap_content" />
++        </LinearLayout>
++    </LinearLayout>
++
++    <LinearLayout
++        android:id="@+id/layout_hdr"
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:layout_marginTop="10dp"
++        android:background="@drawable/layout_background"
++        android:orientation="vertical"
++        android:padding="10dp" >
++
++        <TextView
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:text="@string/hdr"
++            android:textSize="20sp" 
++            android:textColor="@android:color/white"/>
++
++        <!-- 最大亮度 -->
++
++        <LinearLayout
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:orientation="horizontal"
++            android:paddingTop="10dp" >
++
++            <TextView
++                android:layout_width="100dp"
++                android:layout_height="wrap_content"
++                android:text="@string/max_brightness" 
++                android:textColor="@android:color/white"/>
++
++            <SeekBar
++                android:id="@+id/seekbar_max_brightness"
++                android:layout_width="0dp"
++                android:layout_height="wrap_content"
++                android:layout_weight="1"
++                android:max="800" />
++
++            <TextView
++                android:id="@+id/text_progress_max_brightness"
++                android:layout_width="50dp"
++                android:textColor="@android:color/white"
++                android:layout_height="wrap_content" />
++        </LinearLayout>
++
++        <!-- 最小亮度 -->
++
++        <LinearLayout
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:orientation="horizontal"
++            android:paddingTop="10dp" >
++
++            <TextView
++                android:layout_width="100dp"
++                android:layout_height="wrap_content"
++                android:text="@string/min_brightness"
++                android:textColor="@android:color/white" />
++
++            <SeekBar
++                android:id="@+id/seekbar_min_brightness"
++                android:layout_width="0dp"
++                android:layout_height="wrap_content"
++                android:layout_weight="1"
++                android:max="1000" />
++
++            <TextView
++                android:id="@+id/text_progress_min_progress"
++                android:layout_width="50dp"
++                android:textColor="@android:color/white"
++                android:layout_height="wrap_content" />
++        </LinearLayout>
++
++        <!-- 亮度 -->
++
++        <LinearLayout
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:orientation="horizontal"
++            android:paddingTop="10dp" >
++
++            <TextView
++                android:layout_width="100dp"
++                android:layout_height="wrap_content"
++                android:text="@string/brightness" 
++                android:textColor="@android:color/white"/>
++
++            <SeekBar
++                android:id="@+id/seekbar_brightness"
++                android:layout_width="0dp"
++                android:layout_height="wrap_content"
++                android:layout_weight="1"
++                android:max="1000" />
++
++            <TextView
++                android:id="@+id/text_brightness_num"
++                android:layout_width="50dp"
++                android:textColor="@android:color/white"
++                android:layout_height="wrap_content" />
++        </LinearLayout>
++
++        <!-- 饱和度 -->
++
++        <LinearLayout
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:orientation="horizontal"
++            android:paddingTop="10dp" >
++
++            <TextView
++                android:layout_width="100dp"
++                android:layout_height="wrap_content"
++                android:text="@string/saturation" 
++                android:textColor="@android:color/white"/>
++
++            <SeekBar
++                android:id="@+id/seekbar_saturation"
++                android:layout_width="0dp"
++                android:layout_height="wrap_content"
++                android:layout_weight="1"
++                android:max="1000" />
++
++            <TextView
++                android:id="@+id/text_saturation_num"
++                android:layout_width="50dp"
++                android:textColor="@android:color/white"
++                android:layout_height="wrap_content" />
++        </LinearLayout>
++    </LinearLayout>
++
++    <LinearLayout
++        android:id="@+id/layout_control"
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:orientation="horizontal"
++        android:paddingTop="10dp" >
++
++        <Button
++            android:id="@+id/btn_ok"
++            android:layout_width="0dp"
++            android:layout_height="wrap_content"
++            android:layout_weight="1"
++            android:padding="10dp"
++            android:text="@string/ok" />
++
++        <Button
++            android:id="@+id/btn_cancel"
++            android:layout_width="0dp"
++            android:layout_height="wrap_content"
++            android:layout_marginLeft="20dp"
++            android:layout_weight="1"
++            android:padding="10dp"
++            android:text="@string/cancel" />
++    </LinearLayout>
++
++</LinearLayout>
+\ No newline at end of file
+diff --git a/Settings/res/values-zh-rCN/strings.xml b/Settings/res/values-zh-rCN/strings.xml
+index d7aa588..3735e43 100755
+--- a/Settings/res/values-zh-rCN/strings.xml
++++ b/Settings/res/values-zh-rCN/strings.xml
+@@ -954,4 +954,14 @@
+     <!-- Strings for Dialog deny button -->
+     <string name="deny">拒绝</string>
+     <string name="progress_scanning">搜索中</string>
++    <string name="advanced_settings">高级设置</string>
++    <string name="bcsh">BCSH</string>
++    <string name="hdr">HDR</string>
++    <string name="brightness">亮度</string>
++    <string name="current">当前数值:</string>
++    <string name="contrast">对比度</string>
++    <string name="saturation">饱和度</string>
++    <string name="tone">色调</string>
++    <string name="max_brightness">最大亮度</string>
++    <string name="min_brightness">最小亮度</string>
+ </resources>
+diff --git a/Settings/res/values/strings.xml b/Settings/res/values/strings.xml
+index 9178841..9188961 100755
+--- a/Settings/res/values/strings.xml
++++ b/Settings/res/values/strings.xml
+@@ -1888,4 +1888,14 @@
+     <!-- Strings for Dialog deny button -->
+     <string name="deny">Deny</string>
+     <string name="progress_scanning">Searching</string>
++    <string name="advanced_settings">Advanced settings</string>
++    <string name="bcsh">BCSH</string>
++    <string name="hdr">HDR</string>
++    <string name="brightness">Brightness</string>
++    <string name="current">Current value:</string>
++    <string name="contrast">Contrast</string>
++    <string name="saturation">Saturation</string>
++    <string name="tone">Tone</string>
++    <string name="max_brightness">Max brightness</string>
++    <string name="min_brightness">Min brightness</string>
+ </resources>
+diff --git a/Settings/res/xml/display_device.xml b/Settings/res/xml/display_device.xml
+index 44b77ce..6168101 100755
+--- a/Settings/res/xml/display_device.xml
++++ b/Settings/res/xml/display_device.xml
+@@ -27,4 +27,7 @@
+         android:key="zoom"
+         android:title="@string/zoom" />
+ 
++    <Preference
++        android:key="advanced_settings"
++        android:title="@string/advanced_settings" />
+ </PreferenceScreen>
+\ No newline at end of file
+diff --git a/Settings/src/com/android/tv/settings/data/ConstData.java b/Settings/src/com/android/tv/settings/data/ConstData.java
+index bf68abb..60d05e4 100755
+--- a/Settings/src/com/android/tv/settings/data/ConstData.java
++++ b/Settings/src/com/android/tv/settings/data/ConstData.java
+@@ -14,4 +14,16 @@ public class ConstData {
+ 		String DISPLAY_ID = "display_id";
+ 		String DISPLAY_NAME = "display_name";
+ 	}
++	public interface SharedKey{
++		String BCSH_VALUES = "bcsh_vlaues";
++		String BCSH_BRIGHTNESS = "bcsh_brightness";
++		String BCSH_CONTRAST = "bcsh_contrast";
++		String BCSH_STAURATION = "bcsh_stauration";
++		String BCSH_TONE = "bcsh_tone";
++		String HDR_VALUES = "hdr_values";
++		String MAX_BRIGHTNESS = "hdr_max_brightness";
++		String MIN_BRIGHTNESS = "hdr_min_brightness";
++		String BRIGHTNESS = "hdr_brightness";
++		String STATURATION = "hdr_staturation";
++	}
+ }
+diff --git a/Settings/src/com/android/tv/settings/display/AdvancedDisplaySettingsActivity.java b/Settings/src/com/android/tv/settings/display/AdvancedDisplaySettingsActivity.java
+new file mode 100644
+index 0000000..8e75d40
+--- /dev/null
++++ b/Settings/src/com/android/tv/settings/display/AdvancedDisplaySettingsActivity.java
+@@ -0,0 +1,433 @@
++/**
++ * 
++ */
++package com.android.tv.settings.display;
++import java.io.BufferedWriter;
++import java.io.File;
++import java.io.FileWriter;
++import java.util.Arrays;
++
++import android.util.Log;
++import android.view.KeyEvent;
++import android.widget.Button;
++import android.widget.LinearLayout;
++import android.widget.SeekBar;
++import android.widget.TextView;
++import android.widget.SimpleAdapter.ViewBinder;
++import android.content.Context;
++import android.content.SharedPreferences;
++import android.os.DisplayOutputManager;
++import com.android.tv.settings.BaseInputActivity;
++import com.android.tv.settings.R;
++import com.android.tv.settings.data.ConstData;
++import com.android.tv.settings.util.JniCall;
++
++import android.view.View;
++/**
++ * @author GaoFei
++ * 
++ */
++public class AdvancedDisplaySettingsActivity extends BaseInputActivity implements SeekBar.OnSeekBarChangeListener, View.OnClickListener{
++	private static final String TAG = "AdvancedDisplaySettingsActivity";
++	private DisplayOutputManager mDisplayOutputManager;
++	private int mOldBcshBrightness;
++	private int mOldBcshContrast;
++	private int mOldBcshStauration;
++	private int mOldBcshTone;
++	private double mOldHdrMaxBrightness;
++	private double mOldHdrMinBrightness;
++	private double mOldHdrBrightnessNum;
++	private double mOldHdrSaturationNum;
++	/**
++	 * BCSH亮度
++	 */
++	private SeekBar mSeekBarBcshBrightness;
++	/**
++	 * BCSH对比度
++	 */
++	private SeekBar mSeekBarBcshContrast;
++	/**
++	 * BCSH饱和度
++	 */
++	private SeekBar mSeekBarBcshSaturation;
++	/**
++	 * BCSH色调
++	 */
++	private SeekBar mSeekBarBcshTone;
++	/**
++	 * BCSH亮度值
++	 */
++	private TextView mTextBcshBrightnessNum;
++	/**
++	 * BCSH对比度值
++	 */
++	private TextView mTextBcshContrastNum;
++	/**
++	 * BCSH饱和度值
++	 */
++	private TextView mTextBcshStaurationNum;
++	/**
++	 * BCSH色调值
++	 */
++	private TextView mTextBcshToneNum;
++	/**
++	 * 确定按钮
++	 */
++	private Button mBtnOK;
++	/**
++	 * 取消按钮
++	 */
++	private Button mBtnCancel;
++	/**
++	 * HDR布局
++	 */
++	private LinearLayout mLayoutHdr;
++	
++	/**最大亮度基数*/
++	public static final int MAX_BRIGHTNESS_BASE = 400;
++	/**亮度基数*/
++	public static final int BRIGHTNESS_BASE = 500;
++	/**饱和度基数*/
++	public static final int STATURATION_BASE = 2000;
++	/**最大亮度，最小亮度生成曲线路径*/
++	public static final String HDR_BRIGHTNESS_PATH = "/sys/class/graphics/fb0/hdr_bt1886eotf";
++	/**亮度-饱和度曲线路径*/
++	public static final String BRIGHTNESS_STATURATION_PATH = "/sys/class/graphics/fb0/hdr_st2084oetf";
++	/**Hdr最大亮度滑动条*/
++	private SeekBar mMaxBrightnessBar;
++	/**Hdr最小亮度滑动条*/
++	private SeekBar mMinBrightnessBar;
++	/**Hdr亮度拖动条*/
++	private SeekBar mSeekBarBrightness;
++	/**Hdr饱和度拖动条*/
++	private SeekBar mSeekBarStatustion;
++	/**当前最大亮度进度值*/
++	private TextView mTextMaxBrightness;
++	/**当前最小亮度进度值*/
++	private TextView mTextMinBrightness;
++	/**亮度值*/
++	private TextView mTextBrightnessNum;
++	/**饱和度*/
++	private TextView mTextStatustionNum;
++	/**最大亮度*/
++	private double mMaxBrightness;
++	/**最小亮度*/
++	private double mMinBrightness;
++	/**亮度数值*/
++	private double mBrightnessNum;
++	/**饱和度数值*/
++	private double mSaturationNum;
++	@Override
++	public void init() {
++		try{
++			mDisplayOutputManager = new DisplayOutputManager();
++		}catch (Exception e){
++			
++		}
++		mSeekBarBcshBrightness = (SeekBar)findViewById(R.id.brightness);
++		mSeekBarBcshContrast = (SeekBar)findViewById(R.id.contrast);
++		mSeekBarBcshSaturation = (SeekBar)findViewById(R.id.saturation);
++		mSeekBarBcshTone = (SeekBar)findViewById(R.id.tone);
++		mTextBcshBrightnessNum = (TextView)findViewById(R.id.text_bcsh_brightness_num);
++		mTextBcshContrastNum = (TextView)findViewById(R.id.text_bcsh_contrast_num);
++		mTextBcshStaurationNum = (TextView)findViewById(R.id.text_bcsh_saturation_num);
++		mTextBcshToneNum = (TextView)findViewById(R.id.text_bcsh_tone_num);
++		mBtnOK = (Button)findViewById(R.id.btn_ok);
++		mBtnCancel = (Button)findViewById(R.id.btn_cancel);
++		mLayoutHdr = (LinearLayout)findViewById(R.id.layout_hdr);
++		mBtnOK.setOnClickListener(this);
++		mBtnCancel.setOnClickListener(this);
++		mSeekBarBcshContrast.setKeyProgressIncrement(20);
++		mSeekBarBcshSaturation.setKeyProgressIncrement(20);
++		mSeekBarBcshBrightness.setOnSeekBarChangeListener(this);
++		mSeekBarBcshContrast.setOnSeekBarChangeListener(this);
++		mSeekBarBcshSaturation.setOnSeekBarChangeListener(this);
++		mSeekBarBcshTone.setOnSeekBarChangeListener(this);
++		SharedPreferences bcshPreferences = getSharedPreferences(ConstData.SharedKey.BCSH_VALUES, Context.MODE_PRIVATE);
++		mOldBcshBrightness = bcshPreferences.getInt(ConstData.SharedKey.BCSH_BRIGHTNESS, 32);
++		mSeekBarBcshBrightness.setProgress(mOldBcshBrightness);
++		mOldBcshContrast = bcshPreferences.getInt(ConstData.SharedKey.BCSH_CONTRAST, 1000);
++		mSeekBarBcshContrast.setProgress(mOldBcshContrast);
++		mOldBcshStauration = bcshPreferences.getInt(ConstData.SharedKey.BCSH_STAURATION, 1000);
++		mSeekBarBcshSaturation.setProgress(mOldBcshStauration);
++		mOldBcshTone = bcshPreferences.getInt(ConstData.SharedKey.BCSH_TONE, 30);
++		mSeekBarBcshTone.setProgress(mOldBcshTone);
++		updateBcshValue();
++		mMaxBrightnessBar = (SeekBar)findViewById(R.id.seekbar_max_brightness);
++		mMinBrightnessBar = (SeekBar)findViewById(R.id.seekbar_min_brightness);
++		mMaxBrightnessBar.setOnSeekBarChangeListener(this);
++		mMinBrightnessBar.setOnSeekBarChangeListener(this);
++		mMaxBrightnessBar.setKeyProgressIncrement(14);
++		mMinBrightnessBar.setKeyProgressIncrement(17);
++		mTextMaxBrightness = (TextView)findViewById(R.id.text_progress_max_brightness);
++		mTextMinBrightness = (TextView)findViewById(R.id.text_progress_min_progress);
++		mSeekBarBrightness = (SeekBar)findViewById(R.id.seekbar_brightness);
++		mSeekBarStatustion = (SeekBar)findViewById(R.id.seekbar_saturation);
++		mSeekBarBrightness.setKeyProgressIncrement(17);
++		mSeekBarStatustion.setKeyProgressIncrement(17);
++		mSeekBarBrightness.setOnSeekBarChangeListener(this);
++		mSeekBarStatustion.setOnSeekBarChangeListener(this);
++		mTextBrightnessNum = (TextView)findViewById(R.id.text_brightness_num);
++		mTextStatustionNum = (TextView)findViewById(R.id.text_saturation_num);
++		try{
++			mMaxBrightness = Double.parseDouble(getValueFromPreference(ConstData.SharedKey.MAX_BRIGHTNESS));
++		}catch (Exception e){
++			//发生异常，此时恢复默认值
++			mMaxBrightness = 800;
++		}
++		mOldHdrMaxBrightness = mMaxBrightness;
++		mMaxBrightnessBar.setProgress((int)(mMaxBrightness - MAX_BRIGHTNESS_BASE));
++		mTextMaxBrightness.setText("" + mMaxBrightness);
++		try{
++			mMinBrightness = Double.parseDouble(getValueFromPreference(ConstData.SharedKey.MIN_BRIGHTNESS));
++		}catch(Exception e){
++			mMinBrightness = 5;
++		}
++		mOldHdrMinBrightness = mMinBrightness;
++		mMinBrightnessBar.setProgress((int)(mMinBrightness * 100));
++		mTextMinBrightness.setText("" + mMinBrightness);
++		try{
++			mBrightnessNum = Double.parseDouble(getValueFromPreference(ConstData.SharedKey.BRIGHTNESS));
++		}catch (Exception e){
++			mBrightnessNum = 1;
++		}
++		mOldHdrBrightnessNum = mBrightnessNum;
++		mSeekBarBrightness.setProgress((int)(mBrightnessNum * 1000) - BRIGHTNESS_BASE);
++		mTextBrightnessNum.setText("" + mBrightnessNum);
++		try{
++			mSaturationNum = Double.parseDouble(getValueFromPreference(ConstData.SharedKey.STATURATION));
++		}catch(Exception e){
++			mSaturationNum = 2.5;
++		}
++		mOldHdrSaturationNum = mSaturationNum;
++		mSeekBarStatustion.setProgress((int)(mSaturationNum * 1000) - STATURATION_BASE);
++		mTextStatustionNum.setText("" + mSaturationNum);
++		try{
++			mMaxBrightness = Double.parseDouble(getValueFromPreference(ConstData.SharedKey.MAX_BRIGHTNESS));
++		}catch (Exception e){
++			//发生异常，此时恢复默认值
++			mMaxBrightness = 800;
++		}
++		mMaxBrightnessBar.setProgress((int)(mMaxBrightness - MAX_BRIGHTNESS_BASE));
++		mTextMaxBrightness.setText("" + mMaxBrightness);
++		
++		try{
++			mMinBrightness = Double.parseDouble(getValueFromPreference(ConstData.SharedKey.MIN_BRIGHTNESS));
++		}catch(Exception e){
++			mMinBrightness = 5;
++		}
++		
++		mMinBrightnessBar.setProgress((int)(mMinBrightness * 100));
++		mTextMinBrightness.setText("" + mMinBrightness);
++		
++		try{
++			mBrightnessNum = Double.parseDouble(getValueFromPreference(ConstData.SharedKey.BRIGHTNESS));
++		}catch (Exception e){
++			mBrightnessNum = 1;
++		}
++		
++		mSeekBarBrightness.setProgress((int)(mBrightnessNum * 1000) - BRIGHTNESS_BASE);
++		mTextBrightnessNum.setText("" + mBrightnessNum);
++		try{
++			mSaturationNum = Double.parseDouble(getValueFromPreference(ConstData.SharedKey.STATURATION));
++		}catch(Exception e){
++			mSaturationNum = 2.5;
++		}
++		mSeekBarStatustion.setProgress((int)(mSaturationNum * 1000) - STATURATION_BASE);
++		mTextStatustionNum.setText("" + mSaturationNum);
++	}
++
++	@Override
++	public int getContentLayoutRes() {
++		return R.layout.activity_advanced_display_settings;
++	}
++
++	@Override
++	public String getInputTitle() {
++		return getString(R.string.advanced_settings);
++	}
++
++	@Override
++	public void onProgressChanged(SeekBar seekBar, int progress,
++			boolean fromUser) {
++		if(seekBar == mSeekBarBcshBrightness){
++			updateBcshValue();
++		}else if(seekBar == mSeekBarBcshContrast){
++			updateBcshValue();
++		}else if(seekBar == mSeekBarBcshSaturation){
++			updateBcshValue();
++		}else if(seekBar == mSeekBarBcshTone){
++			updateBcshValue();
++		}else if(seekBar == mMaxBrightnessBar){
++			mMaxBrightness = (progress + MAX_BRIGHTNESS_BASE) * 1.0;
++			mTextMaxBrightness.setText("" + mMaxBrightness);
++			updateHdrBrightness();
++		}else if(seekBar == mMinBrightnessBar){
++			mMinBrightness = progress * 1.0 / 100;
++			mTextMinBrightness.setText("" + mMinBrightness);
++			updateHdrBrightness();
++		}else if(seekBar == mSeekBarBrightness){
++			mBrightnessNum = (progress + BRIGHTNESS_BASE) * 1.0 / 1000;
++			mTextBrightnessNum.setText("" + mBrightnessNum);
++			updateBrightnessSaturation();
++		}else if(seekBar == mSeekBarStatustion){
++			mSaturationNum = (progress + STATURATION_BASE) * 1.0 / 1000;
++			mTextStatustionNum.setText("" + mSaturationNum);
++			updateBrightnessSaturation();
++		}
++		Log.i(TAG, "onProgressChanged->progress:" + progress);
++	}
++
++	@Override
++	public void onStartTrackingTouch(SeekBar seekBar) {
++		Log.i(TAG, "onStartTrackingTouch");
++	}
++
++	@Override
++	public void onStopTrackingTouch(SeekBar seekBar) {
++		Log.i(TAG, "onStopTrackingTouch");
++	}
++
++    private void updateBcshValue() {
++    	if(mDisplayOutputManager == null)
++    		return;
++        try {
++            //调整亮度
++            mDisplayOutputManager.setBrightness(mDisplayOutputManager.MAIN_DISPLAY, -32 + mSeekBarBcshBrightness.getProgress());
++            //调整对比度
++            mDisplayOutputManager.setContrast(mDisplayOutputManager.MAIN_DISPLAY, mSeekBarBcshContrast.getProgress() * 1.0f / 1000);
++            //调整饱和度
++            mDisplayOutputManager.setSaturation(mDisplayOutputManager.MAIN_DISPLAY, mSeekBarBcshSaturation.getProgress() * 1.0f / 1000);
++            //调整色调
++            mDisplayOutputManager.setHue(mDisplayOutputManager.MAIN_DISPLAY, -30 + mSeekBarBcshTone.getProgress());
++            mTextBcshBrightnessNum.setText("" +  (-32 + mSeekBarBcshBrightness.getProgress()));
++            mTextBcshContrastNum.setText("" + mSeekBarBcshContrast.getProgress() * 1.0f / 1000);
++            mTextBcshStaurationNum.setText("" +  mSeekBarBcshSaturation.getProgress() * 1.0f / 1000);
++            mTextBcshToneNum.setText("" + (-30 + mSeekBarBcshTone.getProgress()));
++        } catch (Exception e) {
++        }
++    }
++    
++	/**更新最大亮度-最小亮度生成曲线*/
++	private void updateHdrBrightness(){
++		int[] brightnessArray = JniCall.get(mMaxBrightness, mMinBrightness);
++		//Log.i(TAG, "updateHdrBrightness->brightnessArray:" + Arrays.toString(brightnessArray));
++		updateFileContent(brightnessArray, HDR_BRIGHTNESS_PATH);
++	}
++	/**更新亮度-饱和度曲线*/
++	private void updateBrightnessSaturation(){
++		int[] staturationArray = JniCall.getOther(mBrightnessNum, mSaturationNum);
++		updateFileContent(staturationArray, BRIGHTNESS_STATURATION_PATH);
++	}
++	
++    @Override
++    public boolean onKeyDown(int keyCode, KeyEvent event) {
++    	if(keyCode == KeyEvent.KEYCODE_BACK){
++    		recoveryOldValue();
++    		finish();
++    		return true;
++    	}
++    	return super.onKeyDown(keyCode, event);
++    }
++
++    private void recoveryOldValue(){
++    	try{
++    		//调整亮度
++            mDisplayOutputManager.setBrightness(mDisplayOutputManager.MAIN_DISPLAY, -32 + mOldBcshBrightness);
++            //调整对比度
++            mDisplayOutputManager.setContrast(mDisplayOutputManager.MAIN_DISPLAY, mOldBcshContrast * 1.0f / 1000);
++            //调整饱和度
++            mDisplayOutputManager.setSaturation(mDisplayOutputManager.MAIN_DISPLAY, mOldBcshStauration * 1.0f / 1000);
++            //调整色调
++            mDisplayOutputManager.setHue(mDisplayOutputManager.MAIN_DISPLAY, -30 + mOldBcshTone);
++    	}catch (Exception e){
++    		
++    	}
++    }
++
++    private void saveNewValue(){
++    	SharedPreferences bcshPreferences = getSharedPreferences(ConstData.SharedKey.BCSH_VALUES, Context.MODE_PRIVATE);
++    	SharedPreferences.Editor editor = bcshPreferences.edit();
++    	editor.putInt(ConstData.SharedKey.BCSH_BRIGHTNESS, mSeekBarBcshBrightness.getProgress());
++    	editor.putInt(ConstData.SharedKey.BCSH_CONTRAST, mSeekBarBcshContrast.getProgress());
++    	editor.putInt(ConstData.SharedKey.BCSH_STAURATION, mSeekBarBcshSaturation.getProgress());
++    	editor.putInt(ConstData.SharedKey.BCSH_TONE, mSeekBarBcshTone.getProgress());
++    	editor.commit();
++    	saveValueToPreference(ConstData.SharedKey.MAX_BRIGHTNESS, "" + mMaxBrightness);
++    	saveValueToPreference(ConstData.SharedKey.MIN_BRIGHTNESS, "" + mMinBrightness);
++    	saveValueToPreference(ConstData.SharedKey.BRIGHTNESS, "" + mBrightnessNum);
++    	saveValueToPreference(ConstData.SharedKey.STATURATION, "" + mSaturationNum);
++    }
++
++	@Override
++	public void onClick(View v) {
++		if(v == mBtnCancel){
++			recoveryOldValue();
++			finish();
++		}else if(v == mBtnOK){
++			saveNewValue();
++			finish();
++		}
++	}
++	
++	/**初始化HDR设置*/
++	public void initHDR(){
++		boolean isSupport= JniCall.isSupportHDR();
++		if(!isSupport)
++			mLayoutHdr.setVisibility(View.GONE);
++		else{
++			//设置电视支持HDR模式
++			JniCall.setHDREnable(1);
++			//恢复HDR曲线值
++			updateHdrBrightness();
++			updateBrightnessSaturation();
++		}
++	}
++	
++	/**移除HDR*/
++	public void removeHDR(){
++		boolean isSupport= JniCall.isSupportHDR();
++		if(isSupport){
++			//取消HDR模式
++			JniCall.setHDREnable(0);
++		}
++	}
++
++	/**更新文件内容*/
++	private void updateFileContent(int[] contents, String path){
++		try{
++			BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(path)));
++			StringBuffer strBuffer = new StringBuffer();
++			for(int item : contents){
++				strBuffer.append(item).append(" ");
++			}
++			//strBuffer.delete(strBuffer.length() - 1, strBuffer.length());
++			bufferedWriter.write(strBuffer.toString());
++			Log.i(TAG, "updateFileContent->strBuffer:" + strBuffer.toString());
++			bufferedWriter.flush();
++			bufferedWriter.close();
++		}catch (Exception e){
++			Log.i(TAG, "updateFileContent->exception:" + e);
++		}
++		
++	}
++	private String getValueFromPreference(String key){
++    	return getSharedPreferences(ConstData.SharedKey.HDR_VALUES, Context.MODE_PRIVATE).getString(key, "");
++    }
++	private void saveValueToPreference(String key, String value){
++    	SharedPreferences sharedPreferences = getSharedPreferences(ConstData.SharedKey.HDR_VALUES, Context.MODE_PRIVATE);
++    	SharedPreferences.Editor editor = sharedPreferences.edit();
++    	editor.putString(key, value);
++    	editor.commit();
++    }
++	@Override
++	protected void onResume() {
++		super.onResume();
++		initHDR();
++	}
++	@Override
++	protected void onPause() {
++		super.onPause();
++		removeHDR();
++	}
++}
+diff --git a/Settings/src/com/android/tv/settings/display/DeviceFragment.java b/Settings/src/com/android/tv/settings/display/DeviceFragment.java
+index 5016a0d..1e7edb1 100755
+--- a/Settings/src/com/android/tv/settings/display/DeviceFragment.java
++++ b/Settings/src/com/android/tv/settings/display/DeviceFragment.java
+@@ -42,6 +42,7 @@ Preference.OnPreferenceClickListener{
+     protected static final String TAG = "DeviceFragment";
+     public static final String KEY_RESOLUTION = "resolution";
+     public static final String KEY_ZOOM = "zoom";
++    public static final String KEY_ADVANCED_SETTINGS = "advanced_settings";
+     protected PreferenceScreen mPreferenceScreen;
+     /**
+      * 分辨率设置
+@@ -52,6 +53,10 @@ Preference.OnPreferenceClickListener{
+      */
+     protected Preference mZoomPreference;
+     /**
++     * 高级设置
++     */
++    protected Preference mAdvancedSettingsPreference;
++    /**
+      * 当前显示设备对应的信息
+      */
+     protected DisplayInfo mDisplayInfo;
+@@ -106,16 +111,18 @@ Preference.OnPreferenceClickListener{
+         mStrPlatform = SystemProperties.get("ro.board.platform");
+         mDisplayManager = (DisplayManager)getActivity().getSystemService(Context.DISPLAY_SERVICE);
+         mPreferenceScreen = getPreferenceScreen();
++        mAdvancedSettingsPreference = findPreference(KEY_ADVANCED_SETTINGS);
++        mResolutionPreference = (ListPreference)findPreference(KEY_RESOLUTION);
++        mZoomPreference = findPreference(KEY_ZOOM);
++        mTextTitle = (TextView)getActivity().findViewById(android.support.v7.preference.R.id.decor_title);
+         if (mStrPlatform.contains("3399")) {
+             mDisplayInfo = getDisplayInfo();
+         } else {
+             Intent intent = getActivity().getIntent();
+             mDisplayInfo = (DisplayInfo) intent.getExtras().getSerializable(ConstData.IntentKey.DISPLAY_INFO);
+         }
+-        mResolutionPreference = (ListPreference)findPreference(KEY_RESOLUTION);
+-        mZoomPreference = findPreference(KEY_ZOOM);
+-        mTextTitle = (TextView)getActivity().findViewById(android.support.v7.preference.R.id.decor_title);
+-
++        if(!mStrPlatform.contains("3328"))
++        	mPreferenceScreen.removePreference(mAdvancedSettingsPreference);
+     }
+ 
+     protected void rebuildView(){
+@@ -130,6 +137,7 @@ Preference.OnPreferenceClickListener{
+     protected void initEvent(){
+         mResolutionPreference.setOnPreferenceChangeListener(this);
+         mZoomPreference.setOnPreferenceClickListener(this);
++        mAdvancedSettingsPreference.setOnPreferenceClickListener(this);
+     }
+ 
+     /**
+@@ -194,6 +202,9 @@ Preference.OnPreferenceClickListener{
+             startActivity(screenScaleIntent);
+         } else if (preference == mResolutionPreference) {
+             //updateResolutionValue();
++        }else if(preference == mAdvancedSettingsPreference){
++        	Intent advancedIntent = new Intent(getActivity(), AdvancedDisplaySettingsActivity.class);
++            startActivity(advancedIntent);
+         }
+         return true;
+     }
+diff --git a/Settings/src/com/android/tv/settings/util/JniCall.java b/Settings/src/com/android/tv/settings/util/JniCall.java
+new file mode 100644
+index 0000000..204e00d
+--- /dev/null
++++ b/Settings/src/com/android/tv/settings/util/JniCall.java
+@@ -0,0 +1,17 @@
++package com.android.tv.settings.util;
++
++public class JniCall {
++	static {
++		System.loadLibrary("tvsettings-jni");
++	}
++
++	//public static native boolean test();
++	//最大亮度，最小亮度曲线
++	public static native int[] get(double x, double y);
++	//亮度，饱和度曲线
++	public static native int[] getOther(double x, double y);
++	//电视是否支持HDR
++	public static native boolean isSupportHDR();
++	//设置电视HDR是否可用
++	public static native void setHDREnable(int enable);
++}
+-- 
+1.7.9.5
+

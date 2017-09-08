@@ -1,0 +1,40 @@
+From b44f34715a76838e3429d4ac56bc6fee5a743112 Mon Sep 17 00:00:00 2001
+From: "jkand.huang" <jkand.huang@rock-chips.com>
+Date: Sat, 27 May 2017 18:13:53 +0800
+Subject: [PATCH 2/7] remove blank = 4, so that recovery HDMI can display. ~~~
+ again ~~~
+
+Change-Id: Ied0b05bc88d0f0bff568178215cff76db6627806
+Signed-off-by: jkand.huang <jkand.huang@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ minui/graphics_fbdev.cpp |    6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/minui/graphics_fbdev.cpp b/minui/graphics_fbdev.cpp
+index cdc129d..6377259 100644
+--- a/minui/graphics_fbdev.cpp
++++ b/minui/graphics_fbdev.cpp
+@@ -129,10 +129,6 @@ static void fbdev_blank(minui_backend* backend __unused, bool blank)
+ {
+     int ret;
+ 
+-    if(blank){
+-        printf("blank = 4, return from fbdev_blank.\n");
+-        return ;
+-    }
+     ret = ioctl(fb_fd, FBIOBLANK, blank ? FB_BLANK_POWERDOWN : FB_BLANK_UNBLANK);
+     if (ret < 0)
+         perror("ioctl(): blank");
+@@ -260,7 +256,7 @@ static GRSurface* fbdev_init(minui_backend* backend) {
+ 
+     printf("framebuffer: %d (%d x %d)\n", fb_fd, gr_draw->width, gr_draw->height);
+ 
+-    fbdev_blank(backend, true);
++    //fbdev_blank(backend, true);
+     fbdev_blank(backend, false);
+ 
+     return gr_draw;
+-- 
+1.7.9.5
+

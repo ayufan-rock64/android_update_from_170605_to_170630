@@ -1,0 +1,27 @@
+From 108db9f52794c878dfef6bd849db7047e204801d Mon Sep 17 00:00:00 2001
+From: tug <tug@skyth-tek.com>
+Date: Wed, 30 Aug 2017 17:42:18 +0800
+Subject: [PATCH 2/2] fix Hotspot spelling error
+
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ Settings/res/values/strings.xml |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Settings/res/values/strings.xml b/Settings/res/values/strings.xml
+index 9188961..4922803 100755
+--- a/Settings/res/values/strings.xml
++++ b/Settings/res/values/strings.xml
+@@ -62,7 +62,7 @@
+     <!-- Main app title [CHAR LIMIT=40] -->
+     <string name="settings_app_name">Settings</string>
+ 
+-    <string name="hotpot_name">HotPot</string>
++    <string name="hotpot_name">Hotspot</string>
+ 
+     <!-- Leanback Launcher App Title for main Settings app [CHAR LIMIT=40] -->
+     <string name="launcher_settings_app_name">Settings</string>
+-- 
+1.7.9.5
+

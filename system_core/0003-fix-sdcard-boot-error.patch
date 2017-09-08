@@ -1,0 +1,55 @@
+From 22ad96ae9e0516a05943d69e4a98330867ea17dc Mon Sep 17 00:00:00 2001
+From: tug <tug@skyth-tek.com>
+Date: Wed, 30 Aug 2017 17:43:13 +0800
+Subject: [PATCH 3/3] fix sdcard boot error
+
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ init/init.cpp |   10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/init/init.cpp b/init/init.cpp
+index 45cd4ed..e2abf46 100644
+--- a/init/init.cpp
++++ b/init/init.cpp
+@@ -462,6 +462,7 @@ static void export_kernel_boot_props() {
+     char* s2;
+     char* s3;
+     char* s4;
++    char* s5;
+ 
+     struct {
+         const char *src_prop;
+@@ -488,13 +489,16 @@ if((s2 > 0 && s3 >0) || s1 >0) {
+         s2 = strstr(cmdline, "androidboot.mode=emmc");
+ 	s3 = strstr(cmdline, "storagemedia=nvme");
+ 	s4 = strstr(cmdline, "androidboot.mode=nvme");
++	s5 = strstr(cmdline, "sdfwupdate"); //check sdcard fw update
+ 	ERROR("s1=%s\n",s1);
+ 	ERROR("s2=%s\n",s2);
+ 	ERROR("s3=%s\n",s3);
+ 	ERROR("s4=%s\n",s4);
++	ERROR("s5=%s\n",s5);
+ 
+-        if ((s1 == NULL) && (s3 == NULL)) {
++        if ((s1 == NULL) && (s3 == NULL) && (s5 == NULL)) {
+             //storagemedia is unknow
++            ERROR("storagemedia is unknow\n");
+             break;
+         }
+ 
+@@ -506,6 +510,10 @@ if((s2 > 0 && s3 >0) || s1 >0) {
+ 	    ERROR("OK,NVME DRIVERS INIT OK\n");
+ 	    property_set("ro.boot.mode", "nvme");
+ 	    break;
++	} else if(s5 >0) {
++	    ERROR("OK,IS sdcard fw upgrade\n");
++	    property_set("ro.boot.mode", "emmc");
++	    break;
+ 	} else {
+             ERROR("OK,EMMC DRIVERS NOT READY, RERRY=%d\n", i);
+             usleep(10000);
+-- 
+1.7.9.5
+

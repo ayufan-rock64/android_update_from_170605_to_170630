@@ -1,0 +1,77 @@
+From 7ad1841c47a1936992de5c542e7850fca1c5a2f6 Mon Sep 17 00:00:00 2001
+From: hoffc <hoffc@codeaurora.org>
+Date: Tue, 21 Jun 2016 09:15:40 +0800
+Subject: [PATCH 2/3] DeskClock: Fix the FC when tapping worldclock
+ imageButton
+
+When tapping worldclock image button, clock will FC.
+
+Change-Id: I8a2852cb8c8e3478eb604dc2585cef835e19bc2f
+CRs-Fixed: 1031529
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ Android.mk         |    2 ++
+ proguard-rules.pro |   31 +++++++++++++++++++++++++++++++
+ 2 files changed, 33 insertions(+)
+ create mode 100644 proguard-rules.pro
+
+diff --git a/Android.mk b/Android.mk
+index b40a57a..cff50bc 100644
+--- a/Android.mk
++++ b/Android.mk
+@@ -28,6 +28,7 @@ LOCAL_STATIC_JAVA_LIBRARIES := android-opt-datetimepicker
+ LOCAL_STATIC_JAVA_LIBRARIES += messageformat
+ LOCAL_STATIC_JAVA_LIBRARIES += android-support-design
+ LOCAL_STATIC_JAVA_LIBRARIES += android-support-v13
++LOCAL_STATIC_JAVA_LIBRARIES += android-support-v4
+ LOCAL_STATIC_JAVA_LIBRARIES += android-support-v7-appcompat
+ LOCAL_STATIC_JAVA_LIBRARIES += android-support-v7-gridlayout
+ LOCAL_STATIC_JAVA_LIBRARIES += android-support-v7-recyclerview
+@@ -41,5 +42,6 @@ LOCAL_AAPT_FLAGS += --extra-packages com.android.datetimepicker
+ LOCAL_AAPT_FLAGS += --extra-packages com.android.messageformat
+ 
+ LOCAL_PROGUARD_FLAG_FILES := ../../../frameworks/support/design/proguard-rules.pro
++LOCAL_PROGUARD_FLAG_FILES += proguard-rules.pro
+ 
+ include $(BUILD_PACKAGE)
+diff --git a/proguard-rules.pro b/proguard-rules.pro
+new file mode 100644
+index 0000000..e03d061
+--- /dev/null
++++ b/proguard-rules.pro
+@@ -0,0 +1,31 @@
++# Copyright (c) 2016, The Linux Foundation. All rights reserved.
++#
++# Redistribution and use in source and binary forms, with or without
++# modification, are permitted provided that the following conditions are
++# met:
++#     * Redistributions of source code must retain the above copyright
++#       notice, this list of conditions and the following disclaimer.
++#     * Redistributions in binary form must reproduce the above
++#       copyright notice, this list of conditions and the following
++#       disclaimer in the documentation and/or other materials provided
++#       with the distribution.
++#     * Neither the name of The Linux Foundation nor the names of its
++#       contributors may be used to endorse or promote products derived
++#       from this software without specific prior written permission.
++#
++# THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
++# WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
++# ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
++# BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
++# BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
++# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
++# IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++
++# Preference objects are inflated via reflection
++-keep public class android.support.v7.widget.SearchView {
++    public <init>(android.content.Context);
++}
+-- 
+1.7.9.5
+

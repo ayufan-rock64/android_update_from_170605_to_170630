@@ -1,0 +1,28 @@
+From 3ceee77fbd2fd474ab6fc3b09360168d6eca2c83 Mon Sep 17 00:00:00 2001
+From: Hao Xiaowei <hxw@rock-chips.com>
+Date: Tue, 13 Jun 2017 09:26:23 +0800
+Subject: [PATCH 12/15] Enable cpusets for Rockchip platforms
+
+The cpuset configuration is implemented in init.${TARGET_BOARD_PLATFORM}.rc
+
+Change-Id: I945b2103d4529add87485a2cb0e02fa1261f4517
+Signed-off-by: Hao Xiaowei <hxw@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ BoardConfig.mk |    3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/BoardConfig.mk b/BoardConfig.mk
+index 1c36770..5b85cd7 100755
+--- a/BoardConfig.mk
++++ b/BoardConfig.mk
+@@ -310,3 +310,6 @@ USE_CLANG_PLATFORM_BUILD ?= true
+ ifeq ($(TARGET_BOARD_PLATFORM_PRODUCT),box)
+     TARGET_RECOVERY_OVERSCAN_PERCENT := 2
+ endif
++
++#enable cpusets sched policy
++ENABLE_CPUSETS := true
+-- 
+1.7.9.5
+

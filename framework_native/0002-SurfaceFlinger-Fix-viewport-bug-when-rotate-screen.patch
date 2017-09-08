@@ -1,0 +1,35 @@
+From 00c3ec97785c0d42f801083c8fc2fc26d3ce4e2d Mon Sep 17 00:00:00 2001
+From: ZhuangXiaoLiang <zhuangxl@rock-chips.com>
+Date: Wed, 7 Jun 2017 08:43:27 +0800
+Subject: [PATCH 2/3] SurfaceFlinger: Fix viewport bug when rotate screen.
+
+Change-Id: I24b6a8b27e09f81b27deb5ae46b52190bdc62ffa
+Signed-off-by: ZhuangXiaoLiang <zhuangxl@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ services/surfaceflinger/DisplayDevice.cpp |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/services/surfaceflinger/DisplayDevice.cpp b/services/surfaceflinger/DisplayDevice.cpp
+index b3cc9ae..0c63381 100755
+--- a/services/surfaceflinger/DisplayDevice.cpp
++++ b/services/surfaceflinger/DisplayDevice.cpp
+@@ -522,13 +522,13 @@ void DisplayDevice::setProjection(int orientation,
+ 
+ #if RK_FORCE_SCALE_FULLSCREEN
+     ALOGV("name =%s",getDisplayName().string());
+-    ALOGV(" viewport [%d %d]",mViewport.getWidth(),mViewport.getHeight());
++    ALOGV(" viewport [%d %d] mViewport [%d %d]",viewport.getWidth(),viewport.getHeight(),mViewport.getWidth(),mViewport.getHeight());
+     ALOGV(" frame [%d %d]", frame.getWidth(),frame.getHeight());
+     ALOGV(" hw [%d %d]", getWidth(),getHeight());
+ 
+     bool isVirtualScreen = mType == DisplayDevice::DISPLAY_VIRTUAL;
+     if ((isVirtualScreen && frame.getWidth() > frame.getHeight()) ||
+-        (mViewport.getWidth()== getWidth() && mViewport.getHeight() == getHeight()
++        (viewport.getWidth()== getWidth() && viewport.getHeight() == getHeight()
+          && (getWidth() != frame.getWidth() || getHeight() != frame.getHeight()))
+         ) {
+         //If change the resolution,force scale to full screen.
+-- 
+1.7.9.5
+

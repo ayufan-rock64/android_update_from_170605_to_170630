@@ -1,0 +1,48 @@
+From 573dc09e6eb4fd8aef71ae78ccfe754fd7fa8cee Mon Sep 17 00:00:00 2001
+From: "rimon.xu" <rimon.xu@rock-chips.com>
+Date: Mon, 19 Jun 2017 16:40:16 +0800
+Subject: [PATCH 6/8] [audiopolicy]: fix a bug when new AudioPolicyManager is
+ not defined BOX_STRATEGY
+
+Change-Id: I9002a1c434bc014ddddf053338784bd03ad255dc
+Signed-off-by: rimon.xu <rimon.xu@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ .../managerdefault/AudioPolicyManager.cpp          |    3 +++
+ .../managerdefault/AudioPolicyManager.h            |    4 ++--
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/services/audiopolicy/managerdefault/AudioPolicyManager.cpp b/services/audiopolicy/managerdefault/AudioPolicyManager.cpp
+index 1a6ebad..a46a100 100644
+--- a/services/audiopolicy/managerdefault/AudioPolicyManager.cpp
++++ b/services/audiopolicy/managerdefault/AudioPolicyManager.cpp
+@@ -3255,6 +3255,9 @@ AudioPolicyManager::AudioPolicyManager(AudioPolicyClientInterface *clientInterfa
+         ALOGE("%s:  Could not get an instance of policy engine", __FUNCTION__);
+         return;
+     }
++
++    mHDMIOutputDevice = NULL;
++    mSPDIFOutputDevice = NULL;
+ #ifdef BOX_STRATEGY
+     mHDMIOutputDevice = new DeviceDescriptor(AUDIO_DEVICE_OUT_AUX_DIGITAL);
+     mSPDIFOutputDevice = new DeviceDescriptor(AUDIO_DEVICE_OUT_SPDIF);
+diff --git a/services/audiopolicy/managerdefault/AudioPolicyManager.h b/services/audiopolicy/managerdefault/AudioPolicyManager.h
+index cbed2b9..709925d 100644
+--- a/services/audiopolicy/managerdefault/AudioPolicyManager.h
++++ b/services/audiopolicy/managerdefault/AudioPolicyManager.h
+@@ -536,10 +536,10 @@ protected:
+         EffectDescriptorCollection mEffects;  // list of registered audio effects
+         bool    mA2dpSuspended;  // true if A2DP output is suspended
+         sp<DeviceDescriptor> mDefaultOutputDevice; // output device selected by default at boot time
+-#ifdef BOX_STRATEGY
++//#ifdef BOX_STRATEGY
+         sp<DeviceDescriptor> mHDMIOutputDevice;
+         sp<DeviceDescriptor> mSPDIFOutputDevice;
+-#endif
++//#endif
+         HwModuleCollection mHwModules;
+ 
+         volatile int32_t mAudioPortGeneration;
+-- 
+1.7.9.5
+

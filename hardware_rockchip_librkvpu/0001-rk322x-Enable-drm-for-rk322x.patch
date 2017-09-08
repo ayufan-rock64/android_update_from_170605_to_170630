@@ -1,0 +1,28 @@
+From 09906c6f7aa1f7d5255b2e21c6ef5af6dc46aff8 Mon Sep 17 00:00:00 2001
+From: ZhouJing <tracy.zhou@rock-chips.com>
+Date: Tue, 13 Jun 2017 15:36:35 +0800
+Subject: [PATCH 1/2] rk322x: Enable drm for rk322x
+
+Change-Id: I673e77d8f7a0227f3d41469c2773ef770b46c505
+Signed-off-by: ZhouJing <tracy.zhou@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ omx_get_gralloc_private/Android.mk |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/omx_get_gralloc_private/Android.mk b/omx_get_gralloc_private/Android.mk
+index f06b7e7..f3df59b 100644
+--- a/omx_get_gralloc_private/Android.mk
++++ b/omx_get_gralloc_private/Android.mk
+@@ -33,7 +33,7 @@ ifeq ($(strip $(TARGET_BOARD_PLATFORM_GPU)),G6110)
+ endif
+ 
+ ifeq ($(strip $(BOARD_USE_DRM)), true)
+-ifneq ($(filter rk3399 rk3288, $(strip $(TARGET_BOARD_PLATFORM))), )
++ifneq ($(filter rk3399 rk3288 rk322x, $(strip $(TARGET_BOARD_PLATFORM))), )
+         LOCAL_CFLAGS += -DUSE_DRM -DRK_DRM_GRALLOC=1 -DMALI_AFBC_GRALLOC=1
+ endif
+ endif
+-- 
+1.7.9.5
+

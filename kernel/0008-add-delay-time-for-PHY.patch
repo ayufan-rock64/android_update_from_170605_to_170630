@@ -1,0 +1,36 @@
+From 7f4732e3d9eaf672a74be045b30d8c4fb3dfed45 Mon Sep 17 00:00:00 2001
+From: tug <tug@skyth-tek.com>
+Date: Tue, 15 Aug 2017 20:16:58 +0800
+Subject: [PATCH 08/13] add delay time for PHY
+
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ .../net/ethernet/rockchip/gmac/stmmac_platform.c   |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/rockchip/gmac/stmmac_platform.c b/drivers/net/ethernet/rockchip/gmac/stmmac_platform.c
+index 85fcf0d..3560420 100644
+--- a/drivers/net/ethernet/rockchip/gmac/stmmac_platform.c
++++ b/drivers/net/ethernet/rockchip/gmac/stmmac_platform.c
+@@ -901,7 +901,7 @@ static int phy_power_on(struct bsp_priv *bsp_priv, bool enable)
+ 		if (gpio_is_valid(bsp_priv->reset_io)) {
+ 			gpio_direction_output(bsp_priv->reset_io,
+ 					      bsp_priv->reset_io_level);
+-			mdelay(5);
++			mdelay(100);
+ 			gpio_direction_output(bsp_priv->reset_io,
+ 					      !bsp_priv->reset_io_level);
+ 		}
+@@ -911,7 +911,7 @@ static int phy_power_on(struct bsp_priv *bsp_priv, bool enable)
+ 			internal_phy_power_on(bsp_priv, enable);
+ 		}
+ 
+-		mdelay(30);
++		mdelay(100);
+ 	} else {
+ 		/* pull down reset */
+ 		if (gpio_is_valid(bsp_priv->reset_io)) {
+-- 
+1.7.9.5
+

@@ -1,0 +1,26 @@
+From b4b3ee8515da9413f0b6e4f1356c07372bee67d9 Mon Sep 17 00:00:00 2001
+From: chenfen <chenfen@rock-chips.com>
+Date: Fri, 19 May 2017 09:37:51 +0800
+Subject: [PATCH 04/12] rk3328: miniloader: fix loader name problem.
+
+Change-Id: I0f243655898e1746b1cfe48938727881dfe3f8c5
+Signed-off-by: chenfen <chenfen@rock-chips.com>
+(cherry picked from commit 5274b2c570ec58b3e5f59e116bdbedc5ffa5f762)
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ tools/rk_tools/RKBOOT/RK3328MINIALL.ini |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/rk_tools/RKBOOT/RK3328MINIALL.ini b/tools/rk_tools/RKBOOT/RK3328MINIALL.ini
+index 0e38194..53df66d 100755
+--- a/tools/rk_tools/RKBOOT/RK3328MINIALL.ini
++++ b/tools/rk_tools/RKBOOT/RK3328MINIALL.ini
+@@ -17,4 +17,4 @@ LOADER2=FlashBoot
+ FlashData=tools/rk_tools/bin/rk33/rk3328_ddr_333MHz_v1.06.bin
+ FlashBoot=tools/rk_tools/bin/rk33/rk322xh_miniloader_v2.43.bin
+ [OUTPUT]
+-PATH=rk322xh_loader_v1.06.243.bin
++PATH=rk3328_loader_v1.06.243.bin
+-- 
+1.7.9.5
+

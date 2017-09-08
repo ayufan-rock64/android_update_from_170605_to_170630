@@ -1,0 +1,42 @@
+From d40b344f2111dd77d3e69cdd4cdd3b645cb4623f Mon Sep 17 00:00:00 2001
+From: tug <tug@skyth-tek.com>
+Date: Tue, 25 Jul 2017 14:24:12 +0800
+Subject: [PATCH 06/13] add 0001-ASoC-rockchip-fix-i2s-fifo-underrun.patch
+
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ sound/soc/rockchip/rk_i2s.c   |    2 +-
+ sound/soc/soc-dmaengine-pcm.c |    3 ---
+ 2 files changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/sound/soc/rockchip/rk_i2s.c b/sound/soc/rockchip/rk_i2s.c
+index 06686f1..b9a6ea3 100644
+--- a/sound/soc/rockchip/rk_i2s.c
++++ b/sound/soc/rockchip/rk_i2s.c
+@@ -46,7 +46,7 @@
+ 
+ #define CLK_SET_LATER
+ #define I2S_DEFAULT_FREQ	(11289600)
+-#define I2S_DMA_BURST_SIZE	(16) /* size * width: 16*4 = 64 bytes */
++#define I2S_DMA_BURST_SIZE	(8) /* size * width: 16*4 = 64 bytes */
+ static DEFINE_SPINLOCK(lock);
+ 
+ #if defined(CONFIG_RK_HDMI) && defined(CONFIG_SND_RK_SOC_HDMI_I2S)
+diff --git a/sound/soc/soc-dmaengine-pcm.c b/sound/soc/soc-dmaengine-pcm.c
+index 74fb2b4..858be32 100644
+--- a/sound/soc/soc-dmaengine-pcm.c
++++ b/sound/soc/soc-dmaengine-pcm.c
+@@ -28,9 +28,6 @@
+ 
+ #include <sound/dmaengine_pcm.h>
+ 
+-
+-#undef CONFIG_ARCH_ROCKCHIP
+-
+ struct dmaengine_pcm_runtime_data {
+ 	struct dma_chan *dma_chan;
+ 	dma_cookie_t cookie;
+-- 
+1.7.9.5
+

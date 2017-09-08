@@ -1,0 +1,73 @@
+From b0a8a93f6d9467a2a54ffaf35567b71fd5348c33 Mon Sep 17 00:00:00 2001
+From: tug <tug@skyth-tek.com>
+Date: Wed, 30 Aug 2017 16:22:36 +0800
+Subject: [PATCH 6/6] add sdcard boot fstab
+
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ fstab.rk30board.bootmode.sd |   23 +++++++++++++++++++++++
+ recovery.sd.fstab           |   21 +++++++++++++++++++++
+ 2 files changed, 44 insertions(+)
+ create mode 100755 fstab.rk30board.bootmode.sd
+ create mode 100755 recovery.sd.fstab
+
+diff --git a/fstab.rk30board.bootmode.sd b/fstab.rk30board.bootmode.sd
+new file mode 100755
+index 0000000..9e887ed
+--- /dev/null
++++ b/fstab.rk30board.bootmode.sd
+@@ -0,0 +1,23 @@
++# Android fstab file.
++#<src>                                          <mnt_point>         <type>    <mnt_flags and options>                       <fs_mgr_flags>
++# The filesystem that contains the filesystem checker binary (typically /system) cannot
++# specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
++
++/dev/block/platform/ff500000.rksdmmc/by-name/system         /system             ext4      ro,noatime,nodiratime,noauto_da_alloc                                  wait,resize
++# use this line below instead to enable verity
++#/dev/block/platform/ff500000.rksdmmc/by-name/system         /system             ext4      ro,noatime,nodiratime,noauto_da_alloc                                  wait,check,verify
++/dev/block/platform/ff500000.rksdmmc/by-name/cache          /cache              ext4      noatime,nodiratime,nosuid,nodev,noauto_da_alloc,discard                wait
++/dev/block/platform/ff500000.rksdmmc/by-name/metadata       /metadata           ext4      noatime,nodiratime,nosuid,nodev,noauto_da_alloc,discard                wait,check
++/dev/block/platform/ff500000.rksdmmc/by-name/userdata       /data               ext4      noatime,nodiratime,nosuid,nodev,noauto_da_alloc,discard,errors=panic   wait,check,encryptable=/metadata/key_file
++/dev/block/platform/ff500000.rksdmmc/by-name/misc           /misc               emmc      defaults      defaults
++
++/devices/ff500000.rksdmmc/mmc_host*         auto  auto    defaults        voldmanaged=sdcard1:auto
++
++# non box product,configuration to the first item, will filter out left
++# ff580000:usb20_otg, ff5c0000:ehci, ff5d0000:ohci, ff600000:dwc3
++/devices/ff580000.usb*     auto vfat defaults      voldmanaged=usb:auto
++/devices/ff5c0000.usb*     auto vfat defaults      voldmanaged=usb:auto
++/devices/ff5d0000.usb*     auto vfat defaults      voldmanaged=usb:auto
++/devices/usb*              auto vfat defaults      voldmanaged=usb:auto
++
++/dev/block/zram0                                none                swap      defaults                                              zramsize=533413200
+diff --git a/recovery.sd.fstab b/recovery.sd.fstab
+new file mode 100755
+index 0000000..adffefb
+--- /dev/null
++++ b/recovery.sd.fstab
+@@ -0,0 +1,21 @@
++# Android fstab file.
++#<src>                                       <mnt_point>         <type>    <mnt_flags and options>       <fs_mgr_flags>
++/dev/block/platform/ff500000.rksdmmc/by-name/user                  /mnt/internal_sd     vfat             defaults                  defaults
++/dev/block/mmcblk1p1                                               /mnt/external_sd     vfat             /dev/block/mmcblk1                  defaults
++/dev/block/platform/ff500000.rksdmmc/by-name/system                /system              ext4             defaults                  defaults
++/dev/block/platform/ff500000.rksdmmc/by-name/cache                 /cache               ext4             defaults                  defaults
++/dev/block/platform/ff500000.rksdmmc/by-name/metadata              /metadata            ext4             defaults                  defaults
++/dev/block/platform/ff500000.rksdmmc/by-name/userdata              /data                ext4             defaults                  defaults
++/dev/block/platform/ff500000.rksdmmc/by-name/cust                  /cust                ext4             defaults                  defaults
++/dev/block/platform/ff500000.rksdmmc/by-name/custom                /custom              ext4             defaults                  defaults
++/dev/block/platform/ff500000.rksdmmc/by-name/radical_update        /radical_update      ext4             defaults                  defaults
++/dev/block/platform/ff500000.rksdmmc/by-name/misc                  /misc                emmc             defaults                  defaults
++/dev/block/platform/ff500000.rksdmmc/by-name/uboot                 /uboot               emmc             defaults                  defaults
++/dev/block/platform/ff500000.rksdmmc/by-name/charge                /charge              emmc             defaults                  defaults
++/dev/block/platform/ff500000.rksdmmc/by-name/resource			   /resource		    emmc			 defaults				   defaults
++/dev/block/platform/ff500000.rksdmmc/by-name/parameter             /parameter           emmc             defaults                  defaults
++/dev/block/platform/ff500000.rksdmmc/by-name/boot                  /boot                emmc             defaults                  defaults
++/dev/block/platform/ff500000.rksdmmc/by-name/recovery              /recovery            emmc             defaults                  defaults
++/dev/block/platform/ff500000.rksdmmc/by-name/backup                /backup              emmc             defaults                  defaults
++/dev/block/platform/ff500000.rksdmmc/by-name/trust                 /trust               emmc             defaults                  defaults
++/dev/block/platform/ff500000.rksdmmc/by-name/baseparamer           /baseparamer         emmc             defaults                  defaults
+-- 
+1.7.9.5
+

@@ -1,0 +1,48 @@
+From 9b8529f819319e012d8185c3ab5ab137a4e6014d Mon Sep 17 00:00:00 2001
+From: Tim Zhou <tim.zhou@rock-chips.com>
+Date: Fri, 19 May 2017 15:09:46 +0800
+Subject: [PATCH 1/3] solve the problem : crash when Cts Verifier test to set
+ the alarm
+
+Change-Id: I46e561d8149493b31758606d4883e27057cc7351
+Signed-off-by: Tim Zhou <tim.zhou@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ src/com/android/deskclock/HandleApiCalls.java |   13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/src/com/android/deskclock/HandleApiCalls.java b/src/com/android/deskclock/HandleApiCalls.java
+index 06cb65a..7554e11 100644
+--- a/src/com/android/deskclock/HandleApiCalls.java
++++ b/src/com/android/deskclock/HandleApiCalls.java
+@@ -43,6 +43,10 @@ import java.util.ArrayList;
+ import java.util.Calendar;
+ import java.util.Iterator;
+ import java.util.List;
++import android.util.Log;
++import java.util.Locale;
++
++
+ 
+ import static android.text.format.DateUtils.SECOND_IN_MILLIS;
+ 
+@@ -279,7 +283,16 @@ public class HandleApiCalls extends Activity {
+             createAlarm.putExtra(AlarmClockFragment.ALARM_CREATE_NEW_INTENT_EXTRA, true);
+             createAlarm.putExtra(DeskClock.SELECT_TAB_INTENT_EXTRA, DeskClock.ALARM_TAB_INDEX);
+             startActivity(createAlarm);
++            //Log.d("zyttest","hour: "+hour+"minutes : "+minutes);
++            String locale = Locale.getDefault().toString();
++            //Log.d("zyttest","locale:"+locale);
++        if("zh_CN_#Hans".equals(locale))
++        {
++            Voice.notifyFailure(this, getString(R.string.invalid_time," ", hour, minutes));
++        }else
++        {
+             Voice.notifyFailure(this, getString(R.string.invalid_time, hour, minutes, " "));
++        }
+             LogUtils.i("HandleApiCalls no/invalid time; opening UI");
+             return;
+         }
+-- 
+1.7.9.5
+

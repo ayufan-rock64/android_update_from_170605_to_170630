@@ -1,0 +1,37 @@
+From 38d2cbc999525fdfd314f89e5839fe91f69b7763 Mon Sep 17 00:00:00 2001
+From: huangds <hds@rock-chips.com>
+Date: Fri, 2 Jun 2017 11:42:48 +0800
+Subject: [PATCH 03/13] make a distinction between 312x box with tablet
+
+Change-Id: I26a79893308015adafde89654b9b4d4709bfb24e
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ rk_hwcomposer.cpp |    9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/rk_hwcomposer.cpp b/rk_hwcomposer.cpp
+index 0a57724..dba92f2 100755
+--- a/rk_hwcomposer.cpp
++++ b/rk_hwcomposer.cpp
+@@ -1222,9 +1222,16 @@ int try_prepare_first(hwcContext * ctx,hwc_display_contents_1_t *list)
+ int is_need_skip_this_policy(void*ctx)
+ {
+     hwcContext * context = (hwcContext *)ctx;
++    bool IsBox = false;
+     if(context->IsRk3128 && context->Is_OverscanEn && context->mScreenChanged)
+     {
+-        return 1;
++        #ifdef RK312X_BOX
++        IsBox = true;
++        #endif
++        if(IsBox)
++            return 1;
++        else
++            return 0;
+     }
+     return 0;
+ }
+-- 
+1.7.9.5
+

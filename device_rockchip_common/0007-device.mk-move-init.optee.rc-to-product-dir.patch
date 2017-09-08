@@ -1,0 +1,54 @@
+From 831b121d6b903facd8f877726d7a2b9fa0707164 Mon Sep 17 00:00:00 2001
+From: Andy Ye <Andy.Ye@rock-chips.com>
+Date: Tue, 6 Jun 2017 11:37:07 +0800
+Subject: [PATCH 07/15] device.mk:move init.optee.rc to product dir
+
+Change-Id: Ifde40da4621fb6875d676fca2460fba766c02d45
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ BoardConfig.mk |    3 ---
+ device.mk      |   13 -------------
+ 2 files changed, 16 deletions(-)
+
+diff --git a/BoardConfig.mk b/BoardConfig.mk
+index 571c121..1c36770 100755
+--- a/BoardConfig.mk
++++ b/BoardConfig.mk
+@@ -286,9 +286,6 @@ BOOT_SHUTDOWN_ANIMATION_RINGING ?= false
+ #for pms multi thead scan
+ BOARD_ENABLE_PMS_MULTI_THREAD_SCAN ?= false
+ 
+-#for optee support
+-PRODUCT_HAVE_OPTEE ?= true
+-
+ #for WV keybox provision
+ ENABLE_KEYBOX_PROVISION ?= false
+ 
+diff --git a/device.mk b/device.mk
+index 7845c5c..253063e 100755
+--- a/device.mk
++++ b/device.mk
+@@ -666,19 +666,6 @@ ifeq ($(strip $(BOOT_SHUTDOWN_ANIMATION_RINGING)),true)
+ include device/rockchip/common/bootshutdown/bootshutdown.mk
+ endif
+ 
+-#for enable optee support
+-ifeq ($(strip $(PRODUCT_HAVE_OPTEE)),true)
+-PRODUCT_PROPERTY_OVERRIDES += \
+-       ro.enable.optee=true
+-ifeq ($(strip $(PRODUCT_SYSTEM_VERITY)),true)
+-PRODUCT_COPY_FILES += \
+-       device/rockchip/common/init.optee_verify.rc:root/init.optee.rc
+-else
+-PRODUCT_COPY_FILES += \
+-       device/rockchip/common/init.optee.rc:root/init.optee.rc
+-endif
+-endif
+-
+ 
+ ifeq ($(strip $(BOARD_ENABLE_PMS_MULTI_THREAD_SCAN)), true)
+ PRODUCT_PROPERTY_OVERRIDES += \
+-- 
+1.7.9.5
+

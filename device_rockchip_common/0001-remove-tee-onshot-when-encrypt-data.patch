@@ -1,0 +1,25 @@
+From 16a432709486673a2b86f022750caa271f62e44b Mon Sep 17 00:00:00 2001
+From: "sam.lin" <lly@rock-chips.com>
+Date: Mon, 22 May 2017 16:54:20 +0800
+Subject: [PATCH 01/15] remove tee onshot when encrypt data. because encrypt
+ data will kills all main process.
+
+Change-Id: I5470a2d586eada58ba3f7f158d53039be0d2e354
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ init.optee.rc |    1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/init.optee.rc b/init.optee.rc
+index cdd5cc7..3347679 100644
+--- a/init.optee.rc
++++ b/init.optee.rc
+@@ -1,4 +1,3 @@
+ service tee-supplicant /system/bin/tee-supplicant
+     class core
+-    oneshot
+     seclabel u:r:tee:s0
+-- 
+1.7.9.5
+

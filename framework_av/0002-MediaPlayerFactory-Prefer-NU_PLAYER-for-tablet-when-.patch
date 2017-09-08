@@ -1,0 +1,35 @@
+From 95f0ddd6f873e0c0ff77791aa897ff0b51f41613 Mon Sep 17 00:00:00 2001
+From: Hao Xiaowei <hxw@rock-chips.com>
+Date: Mon, 5 Jun 2017 19:00:47 +0800
+Subject: [PATCH 2/8] MediaPlayerFactory:Prefer NU_PLAYER for tablet when http
+ source
+
+Change-Id: I1d5dec941840a4411bdc1a436d2879032f486dab
+Signed-off-by: Hao Xiaowei <hxw@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ media/libmediaplayerservice/MediaPlayerFactory.cpp |    8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/media/libmediaplayerservice/MediaPlayerFactory.cpp b/media/libmediaplayerservice/MediaPlayerFactory.cpp
+index 95da25c..e69b39a 100644
+--- a/media/libmediaplayerservice/MediaPlayerFactory.cpp
++++ b/media/libmediaplayerservice/MediaPlayerFactory.cpp
+@@ -170,6 +170,14 @@ player_type MediaPlayerFactory::getPlayerType(const sp<IMediaPlayer>& client,
+     if(!strncasecmp("http://localhost:", url, 17)) {
+         return NU_PLAYER;
+     }
++
++    if(!strncasecmp("http://", url, 7)){
++        char value[PROPERTY_VALUE_MAX];
++        property_get("ro.target.product",value, NULL);
++        if(!strcasecmp("tablet", value))
++            return NU_PLAYER;
++    }
++
+     if (!strncasecmp("iptv://", url, 7)) {
+         return NU_PLAYER;
+     }
+-- 
+1.7.9.5
+

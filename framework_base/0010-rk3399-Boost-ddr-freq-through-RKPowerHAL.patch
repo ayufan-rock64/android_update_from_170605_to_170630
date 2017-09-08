@@ -1,0 +1,359 @@
+From d80646c35dc5580d699c6534ebeff11a56922e59 Mon Sep 17 00:00:00 2001
+From: Hao Xiaowei <hxw@rock-chips.com>
+Date: Tue, 23 May 2017 12:00:54 +0800
+Subject: [PATCH 10/14] rk3399: Boost ddr freq through RKPowerHAL
+
+1.Add operations for screen on/off video normal/perf scenes.
+2.These operations can be configured in /etc/ddr_config.xml
+
+Change-Id: Iaa02d1e0873a58cf8f7e9074abd2a34c3cc983f4
+Signed-off-by: Hao Xiaowei <hxw@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ core/java/android/os/IPowerManager.aidl            |    2 +-
+ core/java/android/os/PowerManager.java             |   32 ++++++++-
+ core/java/android/os/PowerManagerInternal.java     |    2 +-
+ media/java/android/media/MediaCodec.java           |    8 +--
+ media/java/android/media/MediaPlayer.java          |   13 ++--
+ .../android/server/policy/PhoneWindowManager.java  |    8 +++
+ .../android/server/power/PowerManagerService.java  |   73 +++++++++++++++++++-
+ 7 files changed, 122 insertions(+), 16 deletions(-)
+
+diff --git a/core/java/android/os/IPowerManager.aidl b/core/java/android/os/IPowerManager.aidl
+index 267ccae..065bbdb 100644
+--- a/core/java/android/os/IPowerManager.aidl
++++ b/core/java/android/os/IPowerManager.aidl
+@@ -35,7 +35,7 @@ interface IPowerManager
+     void releaseWakeLock(IBinder lock, int flags);
+     void updateWakeLockUids(IBinder lock, in int[] uids);
+     oneway void powerHint(int hintId, int data);
+-    oneway void powerHintNoPermCheck(int hintId, int data);
++    oneway void powerHintNoPermCheck(int scene);
+ 
+     void updateWakeLockWorkSource(IBinder lock, in WorkSource ws, String historyTag);
+     boolean isWakeLockLevelSupported(int level);
+diff --git a/core/java/android/os/PowerManager.java b/core/java/android/os/PowerManager.java
+index 5514e61..b58f29e 100644
+--- a/core/java/android/os/PowerManager.java
++++ b/core/java/android/os/PowerManager.java
+@@ -438,7 +438,6 @@ public final class PowerManager {
+      */
+     public static final String REBOOT_REQUESTED_BY_DEVICE_OWNER = "deviceowner";
+ 
+-
+     /**
+      * @hide
+      */
+@@ -449,6 +448,23 @@ public final class PowerManager {
+     public static final int PERFORMANCE_MODE_PERFORMANCE = 1;
+ 
+     /**
++     * @hide
++     */
++    public static final int SCREEN_SCENE_OFF = 0;
++    /**
++     * @hide
++     */
++    public static final int SCREEN_SCENE_ON = 1;
++    /**
++     * @hide
++     */
++    public static final int VIDEO_SCENE_NORMAL = 2;
++    /**
++     * @hide
++     */
++    public static final int VIDEO_SCENE_PERF = 3;
++
++    /**
+      * The 'reason' value used when rebooting in safe mode
+      * @hide
+      */
+@@ -1533,4 +1549,18 @@ public final class PowerManager {
+         } catch (RemoteException e) {
+         }
+     }
++
++    /**
++     * Set the current boost mode for secne.
++     *
++     * @hide
++     */
++    public void powerHintNoPermCheck(int scene) {
++        try {
++            if (mService != null) {
++                mService.powerHintNoPermCheck(scene);
++            }
++        } catch (RemoteException e) {
++        }
++    }
+ }
+diff --git a/core/java/android/os/PowerManagerInternal.java b/core/java/android/os/PowerManagerInternal.java
+index 4ec3489..118a235 100644
+--- a/core/java/android/os/PowerManagerInternal.java
++++ b/core/java/android/os/PowerManagerInternal.java
+@@ -68,10 +68,10 @@ public abstract class PowerManagerInternal {
+      * These must be kept in sync with the values in hardware/libhardware/include/hardware/power.h
+      */
+     public static final int POWER_HINT_INTERACTION = 2;
+-    public static final int POWER_HINT_VIDEO_DECODE = 4;
+     public static final int POWER_HINT_SUSTAINED_PERFORMANCE_MODE = 6;
+     public static final int POWER_HINT_LAUNCH = 8;
+     public static final int POWER_HINT_PERFORMANCE = 10;
++    public static final int POWER_HINT_RKBOOST = 11;
+ 
+     public static String wakefulnessToString(int wakefulness) {
+         switch (wakefulness) {
+diff --git a/media/java/android/media/MediaCodec.java b/media/java/android/media/MediaCodec.java
+index 96b9d96..7b246b9 100644
+--- a/media/java/android/media/MediaCodec.java
++++ b/media/java/android/media/MediaCodec.java
+@@ -29,7 +29,7 @@ import android.os.Handler;
+ import android.os.IPowerManager;
+ import android.os.Looper;
+ import android.os.Message;
+-import android.os.PowerManagerInternal;
++import android.os.PowerManager;
+ import android.os.ServiceManager;
+ import android.os.SystemProperties;
+ import android.view.Surface;
+@@ -2004,9 +2004,9 @@ final public class MediaCodec {
+                     videoWidth = getInputFormat().getInteger(MediaFormat.KEY_WIDTH);
+                     videoHeight = getInputFormat().getInteger(MediaFormat.KEY_HEIGHT);
+                     if(videoWidth > 2048 || videoHeight > 2048)
+-                        mPower.powerHintNoPermCheck(PowerManagerInternal.POWER_HINT_VIDEO_DECODE,0x40003);
++                        mPower.powerHintNoPermCheck(PowerManager.VIDEO_SCENE_PERF);
+                     else
+-                        mPower.powerHintNoPermCheck(PowerManagerInternal.POWER_HINT_VIDEO_DECODE,0x40000);
++                        mPower.powerHintNoPermCheck(PowerManager.VIDEO_SCENE_NORMAL);
+                 }catch (Exception e){
+                     Log.i("MediaCodec",e.getMessage());
+                 }
+@@ -2031,7 +2031,7 @@ final public class MediaCodec {
+         if(SystemProperties.get("ro.board.platform").equals("rk3399")){
+             if(getCodecInfo().isVideo()){
+                 try{
+-                    mPower.powerHintNoPermCheck(PowerManagerInternal.POWER_HINT_VIDEO_DECODE,0x40000);
++                    mPower.powerHintNoPermCheck(PowerManager.VIDEO_SCENE_NORMAL);
+                 }catch (Exception e){
+                     Log.i("MediaCodec",e.getMessage());
+                 }
+diff --git a/media/java/android/media/MediaPlayer.java b/media/java/android/media/MediaPlayer.java
+index f2abfb0..d1c4987 100755
+--- a/media/java/android/media/MediaPlayer.java
++++ b/media/java/android/media/MediaPlayer.java
+@@ -34,7 +34,6 @@ import android.os.Parcel;
+ import android.os.Parcelable;
+ import android.os.Process;
+ import android.os.PowerManager;
+-import android.os.PowerManagerInternal;
+ import android.os.ServiceManager;
+ import android.os.SystemProperties;
+ import android.provider.Settings;
+@@ -1388,9 +1387,9 @@ public class MediaPlayer extends PlayerBase
+                             videoWidth = getVideoWidth();
+                             videoHeight = getVideoHeight();
+                             if(videoWidth > 2048 || videoHeight > 2048){
+-                                mPower.powerHintNoPermCheck(PowerManagerInternal.POWER_HINT_VIDEO_DECODE,0x40003);
++                                mPower.powerHintNoPermCheck(PowerManager.VIDEO_SCENE_PERF);
+                             } else {
+-                                mPower.powerHintNoPermCheck(PowerManagerInternal.POWER_HINT_VIDEO_DECODE,0x40000);
++                                mPower.powerHintNoPermCheck(PowerManager.VIDEO_SCENE_NORMAL);
+                             }
+                         }catch (Exception e){
+                             Log.i("MediaPlayer",e.getMessage());
+@@ -1426,7 +1425,7 @@ public class MediaPlayer extends PlayerBase
+     public void stop() throws IllegalStateException {
+         if(SystemProperties.get("ro.board.platform").equals("rk3399")){
+             try{
+-                mPower.powerHintNoPermCheck(PowerManagerInternal.POWER_HINT_VIDEO_DECODE,0x40000);
++                mPower.powerHintNoPermCheck(PowerManager.VIDEO_SCENE_NORMAL);
+             }catch (Exception e){
+                 Log.i("MediaPlayer",e.getMessage());
+             }
+@@ -1454,9 +1453,9 @@ public class MediaPlayer extends PlayerBase
+                             videoWidth = getVideoWidth();
+                             videoHeight = getVideoHeight();
+                             if(videoWidth > 2048 || videoHeight > 2048)
+-                                mPower.powerHintNoPermCheck(PowerManagerInternal.POWER_HINT_VIDEO_DECODE,0x40003);
++                                mPower.powerHintNoPermCheck(PowerManager.VIDEO_SCENE_PERF);
+                             else
+-                                mPower.powerHintNoPermCheck(PowerManagerInternal.POWER_HINT_VIDEO_DECODE,0x40000);
++                                mPower.powerHintNoPermCheck(PowerManager.VIDEO_SCENE_NORMAL);
+                         }catch (Exception e){
+                             Log.i("MediaPlayer",e.getMessage());
+                         }
+@@ -1924,7 +1923,7 @@ public class MediaPlayer extends PlayerBase
+     public void reset() {
+         if(SystemProperties.get("ro.board.platform").equals("rk3399")){
+             try{
+-                mPower.powerHintNoPermCheck(PowerManagerInternal.POWER_HINT_VIDEO_DECODE,0x40000);
++                mPower.powerHintNoPermCheck(PowerManager.VIDEO_SCENE_NORMAL);
+             }catch (Exception e){
+                 Log.i("MediaPlayer",e.getMessage());
+             }
+diff --git a/services/core/java/com/android/server/policy/PhoneWindowManager.java b/services/core/java/com/android/server/policy/PhoneWindowManager.java
+index dac1474..12fd149 100755
+--- a/services/core/java/com/android/server/policy/PhoneWindowManager.java
++++ b/services/core/java/com/android/server/policy/PhoneWindowManager.java
+@@ -6643,6 +6643,10 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+             if (mKeyguardDelegate != null) {
+                 mKeyguardDelegate.onScreenTurnedOff();
+             }
++
++            if(SystemProperties.get("ro.board.platform").equals("rk3399")){
++                mPowerManager.powerHintNoPermCheck(PowerManager.SCREEN_SCENE_OFF);
++            }
+         }
+         reportScreenStateToVrManager(false);
+     }
+@@ -6669,6 +6673,10 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+                         "null mKeyguardDelegate: setting mKeyguardDrawComplete.");
+                 finishKeyguardDrawn();
+             }
++
++            if(SystemProperties.get("ro.board.platform").equals("rk3399")){
++                mPowerManager.powerHintNoPermCheck(PowerManager.SCREEN_SCENE_ON);
++            }
+         }
+     }
+ 
+diff --git a/services/core/java/com/android/server/power/PowerManagerService.java b/services/core/java/com/android/server/power/PowerManagerService.java
+index 3e7edfe..00072f9 100755
+--- a/services/core/java/com/android/server/power/PowerManagerService.java
++++ b/services/core/java/com/android/server/power/PowerManagerService.java
+@@ -60,6 +60,7 @@ import android.util.PrintWriterPrinter;
+ import android.util.Slog;
+ import android.util.SparseIntArray;
+ import android.util.TimeUtils;
++import android.util.Xml;
+ import android.view.Display;
+ import android.view.WindowManagerPolicy;
+ 
+@@ -77,13 +78,20 @@ import com.android.server.lights.LightsManager;
+ import com.android.server.vr.VrManagerService;
+ import libcore.util.Objects;
+ 
++import java.io.File;
++import java.io.FileInputStream;
+ import java.io.FileDescriptor;
+ import java.io.PrintWriter;
+ import java.lang.annotation.Retention;
+ import java.lang.annotation.RetentionPolicy;
++import java.lang.Integer;
+ import java.util.ArrayList;
+ import java.util.Arrays;
+ 
++import org.xmlpull.v1.XmlPullParser;
++import org.xmlpull.v1.XmlPullParserException;
++import org.xmlpull.v1.XmlSerializer;
++
+ import static android.os.PowerManagerInternal.POWER_HINT_INTERACTION;
+ import static android.os.PowerManagerInternal.WAKEFULNESS_ASLEEP;
+ import static android.os.PowerManagerInternal.WAKEFULNESS_AWAKE;
+@@ -513,6 +521,11 @@ public final class PowerManagerService extends SystemService
+ 
+     private int mPerformanceMode = PowerManager.PERFORMANCE_MODE_NORMAL;
+ 
++    private int screenOnDDRMinFreq=2;
++    private int screenOffDDRMinFreq=0;
++    private int videoNormalDDRMinFreq=0;
++    private int videoPerfDDRMinFreq=2;
++
+     private native void nativeInit();
+ 
+     private static native void nativeAcquireSuspendBlocker(String name);
+@@ -540,6 +553,7 @@ public final class PowerManagerService extends SystemService
+ 
+             mWakefulness = WAKEFULNESS_AWAKE;
+ 
++            parseConfig();
+             nativeInit();
+             nativeSetAutoSuspend(false);
+             nativeSetInteractive(true);
+@@ -581,6 +595,47 @@ public final class PowerManagerService extends SystemService
+         }
+     }
+ 
++    private void parseConfig(){
++        File file=new File("/system/etc/ddr_config.xml");
++        if (!file.exists()) {
++            Slog.e(TAG, " Failed while trying resolve ddr config file, not exists");
++            return;
++        }
++        FileInputStream stream=null;
++        try {
++            stream = new FileInputStream(file);
++            XmlPullParser parser = Xml.newPullParser();
++            parser.setInput(stream, null);
++            int type;
++            do {
++                type = parser.next();
++                if (type == XmlPullParser.START_TAG) {
++                    String tag = parser.getName();
++                    if(tag.equals("screen_on")){
++                        screenOnDDRMinFreq = Integer.parseInt(parser.getAttributeValue(null,"min_freq"));
++                    }else if(tag.equals("screen_off")){
++                        screenOffDDRMinFreq = Integer.parseInt(parser.getAttributeValue(null,"min_freq"));
++                    }else if(tag.equals("video_normal")){
++                        videoNormalDDRMinFreq = Integer.parseInt(parser.getAttributeValue(null,"min_freq"));
++                    }else if(tag.equals("video_perf")){
++                        videoPerfDDRMinFreq = Integer.parseInt(parser.getAttributeValue(null,"min_freq"));
++                    }
++                }
++            } while(type != XmlPullParser.END_DOCUMENT);
++        } catch (Exception e) {
++            Slog.i(TAG, "failed parsing ddr_config.xml");
++            e.printStackTrace();
++        } finally {
++            if(stream!=null){
++                try{
++                    stream.close();
++                }catch(Exception e){
++                    e.printStackTrace();
++                }
++            }
++        }
++    }
++
+     public void systemReady(IAppOpsService appOps) {
+         synchronized (mLock) {
+             mSystemReady = true;
+@@ -3400,12 +3455,25 @@ public final class PowerManagerService extends SystemService
+         }
+ 
+         @Override // Binder call
+-        public void powerHintNoPermCheck(int hintId, int data) {
++        public void powerHintNoPermCheck(int scene) {
+             if (!mSystemReady) {
+                 // Service not ready yet, so who the heck cares about power hints, bah.
+                 return;
+             }
+-            powerHintInternal(hintId, data);
++            switch(scene) {
++            case PowerManager.SCREEN_SCENE_OFF:
++                powerHintInternal(PowerManagerInternal.POWER_HINT_RKBOOST, (screenOffDDRMinFreq&0xF) | 0xF0000);
++                break;
++            case PowerManager.SCREEN_SCENE_ON:
++                powerHintInternal(PowerManagerInternal.POWER_HINT_RKBOOST, (screenOnDDRMinFreq&0xF) | 0xF0000);
++                break;
++            case PowerManager.VIDEO_SCENE_NORMAL:
++                powerHintInternal(PowerManagerInternal.POWER_HINT_RKBOOST, (videoNormalDDRMinFreq&0xF) | 0xF0000);
++                break;
++            case PowerManager.VIDEO_SCENE_PERF:
++                powerHintInternal(PowerManagerInternal.POWER_HINT_RKBOOST, (videoPerfDDRMinFreq&0xF) | 0xF0000);
++                break;
++            }
+         }
+ 
+         @Override // Binder call
+@@ -3648,6 +3716,7 @@ public final class PowerManagerService extends SystemService
+             }
+         }
+ 
++        @Override // Binder call
+         public void setPerformanceMode(int mode) {
+             if (mPerformanceMode != mode) {
+                 mPerformanceMode = mode;
+-- 
+1.7.9.5
+

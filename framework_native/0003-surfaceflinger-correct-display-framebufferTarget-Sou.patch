@@ -1,0 +1,91 @@
+From 6056c63ba43cfc52bc49012ac354ba2d194a5809 Mon Sep 17 00:00:00 2001
+From: Mark Yao <mark.yao@rock-chips.com>
+Date: Wed, 26 Apr 2017 17:17:57 +0800
+Subject: [PATCH 3/3] surfaceflinger: correct display framebufferTarget Source
+ Crop
+
+Change-Id: If2befee8e08f1061f5ef73555c23614d0a9faa85
+Signed-off-by: Mark Yao <mark.yao@rock-chips.com>
+---
+ .../DisplayHardware/HWComposer_hwc1.cpp              | 20 +++++++++-----------
+ .../surfaceflinger/DisplayHardware/HWComposer_hwc1.h |  2 +-
+ services/surfaceflinger/SurfaceFlinger_hwc1.cpp      |  2 +-
+ 3 files changed, 11 insertions(+), 13 deletions(-)
+
+diff --git a/services/surfaceflinger/DisplayHardware/HWComposer_hwc1.cpp b/services/surfaceflinger/DisplayHardware/HWComposer_hwc1.cpp
+index 882a857..a635b00 100755
+--- a/services/surfaceflinger/DisplayHardware/HWComposer_hwc1.cpp
++++ b/services/surfaceflinger/DisplayHardware/HWComposer_hwc1.cpp
+@@ -618,7 +618,7 @@ void HWComposer::eventControl(int disp, int event, int enabled) {
+     }
+ }
+ 
+-status_t HWComposer::createWorkList(int32_t id, size_t numLayers) {
++status_t HWComposer::createWorkList(int32_t id, size_t numLayers, int width, int height) {
+     if (uint32_t(id)>31 || !mAllocatedDisplayIDs.hasBit(id)) {
+         return BAD_INDEX;
+     }
+@@ -639,26 +639,24 @@ status_t HWComposer::createWorkList(int32_t id, size_t numLayers) {
+         if (hwcHasApiVersion(mHwc, HWC_DEVICE_API_VERSION_1_1)) {
+             disp.framebufferTarget = &disp.list->hwLayers[numLayers - 1];
+             memset(disp.framebufferTarget, 0, sizeof(hwc_layer_1_t));
++#if !RK_USE_DRM
++            const hwc_rect_t r = { 0, 0, (int) width, (int) height };
++#else
+             const DisplayConfig& currentConfig =
+                     disp.configs[disp.currentConfig];
+             const hwc_rect_t r = { 0, 0,
+                     (int) currentConfig.width, (int) currentConfig.height };
++#endif
+             disp.framebufferTarget->compositionType = HWC_FRAMEBUFFER_TARGET;
+             disp.framebufferTarget->hints = 0;
+             disp.framebufferTarget->flags = 0;
+             disp.framebufferTarget->handle = disp.fbTargetHandle;
+             disp.framebufferTarget->transform = 0;
+             disp.framebufferTarget->blending = HWC_BLENDING_PREMULT;
+-            if (hwcHasApiVersion(mHwc, HWC_DEVICE_API_VERSION_1_3)) {
+-                disp.framebufferTarget->sourceCropf.left = 0;
+-                disp.framebufferTarget->sourceCropf.top = 0;
+-                disp.framebufferTarget->sourceCropf.right =
+-                        currentConfig.width;
+-                disp.framebufferTarget->sourceCropf.bottom =
+-                        currentConfig.height;
+-            } else {
+-                disp.framebufferTarget->sourceCrop = r;
+-            }
++            disp.framebufferTarget->sourceCropf.left = 0;
++            disp.framebufferTarget->sourceCropf.top = 0;
++            disp.framebufferTarget->sourceCropf.right = width;
++            disp.framebufferTarget->sourceCropf.bottom = height;
+             disp.framebufferTarget->displayFrame = r;
+             disp.framebufferTarget->visibleRegionScreen.numRects = 1;
+             disp.framebufferTarget->visibleRegionScreen.rects =
+diff --git a/services/surfaceflinger/DisplayHardware/HWComposer_hwc1.h b/services/surfaceflinger/DisplayHardware/HWComposer_hwc1.h
+index 7bf7335..b3bf8bd 100755
+--- a/services/surfaceflinger/DisplayHardware/HWComposer_hwc1.h
++++ b/services/surfaceflinger/DisplayHardware/HWComposer_hwc1.h
+@@ -118,7 +118,7 @@ public:
+     void disconnectDisplay(int disp);
+ 
+     // create a work list for numLayers layer. sets HWC_GEOMETRY_CHANGED.
+-    status_t createWorkList(int32_t id, size_t numLayers);
++    status_t createWorkList(int32_t id, size_t numLayers, int width, int height);
+ 
+     bool supportsFramebufferTarget() const;
+ 
+diff --git a/services/surfaceflinger/SurfaceFlinger_hwc1.cpp b/services/surfaceflinger/SurfaceFlinger_hwc1.cpp
+index 7c44107..f6c6ccc 100755
+--- a/services/surfaceflinger/SurfaceFlinger_hwc1.cpp
++++ b/services/surfaceflinger/SurfaceFlinger_hwc1.cpp
+@@ -1329,7 +1329,7 @@ void SurfaceFlinger::setUpHWComposer() {
+                     const Vector< sp<Layer> >& currentLayers(
+                         hw->getVisibleLayersSortedByZ());
+                     const size_t count = currentLayers.size();
+-                    if (hwc.createWorkList(id, count) == NO_ERROR) {
++                    if (hwc.createWorkList(id, count, mDisplays[dpy]->getWidth(), mDisplays[dpy]->getHeight()) == NO_ERROR) {
+                         HWComposer::LayerListIterator cur = hwc.begin(id);
+                         const HWComposer::LayerListIterator end = hwc.end(id);
+                         for (size_t i=0 ; cur!=end && i<count ; ++i, ++cur) {
+-- 
+1.9.1
+

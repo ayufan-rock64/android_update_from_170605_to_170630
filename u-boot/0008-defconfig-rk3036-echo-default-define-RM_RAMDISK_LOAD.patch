@@ -1,0 +1,27 @@
+From fb74cf80145a90ac4ee9f567c9c17280eb2ae176 Mon Sep 17 00:00:00 2001
+From: cww <cww@rock-chips.com>
+Date: Thu, 8 Jun 2017 16:09:43 +0800
+Subject: [PATCH 08/12] defconfig: rk3036: echo: default define
+ RM_RAMDISK_LOAD
+
+Change-Id: Iaf5dc70362861076827eaa74d3ba06404ab7897b
+Signed-off-by: cww <cww@rock-chips.com>
+(cherry picked from commit 3e3f3fe65d4f3733255ac8421385bc58799feceb)
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ configs/rk3036_echo_defconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/configs/rk3036_echo_defconfig b/configs/rk3036_echo_defconfig
+index a2c6cd1..d837791 100644
+--- a/configs/rk3036_echo_defconfig
++++ b/configs/rk3036_echo_defconfig
+@@ -1,4 +1,4 @@
+-CONFIG_SYS_EXTRA_OPTIONS="RKCHIP_RK3036,PRODUCT_BOX,SECOND_LEVEL_BOOTLOADER,PRODUCT_ECHO"
++CONFIG_SYS_EXTRA_OPTIONS="RKCHIP_RK3036,PRODUCT_BOX,SECOND_LEVEL_BOOTLOADER,PRODUCT_ECHO,RM_RAMDISK_LOAD"
+ CONFIG_ARM=y
+ CONFIG_ROCKCHIP_ARCH32=y
+ CONFIG_PLAT_RK30XX=y
+-- 
+1.7.9.5
+

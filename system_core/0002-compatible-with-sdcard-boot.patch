@@ -1,0 +1,81 @@
+From 884b436920a2bd4627d12b6524f1d95955a2506d Mon Sep 17 00:00:00 2001
+From: tug <tug@skyth-tek.com>
+Date: Thu, 6 Jul 2017 16:09:18 +0800
+Subject: [PATCH 2/3] compatible with sdcard boot
+
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ init/init.cpp |   26 +++++++++++++++++++++++++-
+ init/init.h   |    4 ++++
+ 2 files changed, 29 insertions(+), 1 deletion(-)
+
+diff --git a/init/init.cpp b/init/init.cpp
+index 3801ba6..45cd4ed 100644
+--- a/init/init.cpp
++++ b/init/init.cpp
+@@ -475,14 +475,23 @@ static void export_kernel_boot_props() {
+         { "ro.boot.hardware",   "ro.hardware",   "unknown", },
+         { "ro.boot.revision",   "ro.revision",   "0", },
+     };
+-
++	proc_read( "/proc/cmdline", cmdline, sizeof(cmdline) );
++        s1 = strstr(cmdline, STORAGE_MEDIA);
++	s2 = strstr(cmdline, "sdfwupdate"); //sdcard fw update
++	s3 = strstr(cmdline, STORAGE_MEDIA_SD); //sdcard fw update
++	ERROR("SDMMC boot? OR sdcard update OR emmc boot ?s1=%s,s2=%s\n\n",s1,s2);
+     //if storagemedia is emmc, so we will wait emmc init finish
++if((s2 > 0 && s3 >0) || s1 >0) {
+     for (int i = 0; i < EMMC_RETRY_COUNT; i++) {
+         proc_read( "/proc/cmdline", cmdline, sizeof(cmdline) );
+         s1 = strstr(cmdline, STORAGE_MEDIA);
+         s2 = strstr(cmdline, "androidboot.mode=emmc");
+ 	s3 = strstr(cmdline, "storagemedia=nvme");
+ 	s4 = strstr(cmdline, "androidboot.mode=nvme");
++	ERROR("s1=%s\n",s1);
++	ERROR("s2=%s\n",s2);
++	ERROR("s3=%s\n",s3);
++	ERROR("s4=%s\n",s4);
+ 
+         if ((s1 == NULL) && (s3 == NULL)) {
+             //storagemedia is unknow
+@@ -502,6 +511,21 @@ static void export_kernel_boot_props() {
+             usleep(10000);
+         }
+     }
++} else {
++    for (int i = 0; i < EMMC_RETRY_COUNT_SD; i++) {
++		proc_read( "/proc/cmdline", cmdline, sizeof(cmdline) );
++		s1 = strstr(cmdline, STORAGE_MEDIA_SD);
++		s2 = strstr(cmdline, "androidboot.mode=sd");
++
++		if ((s1 > 0) && (s2 > 0)) {
++			ERROR("OK,SDMMC DRIVERS INIT OK\n");
++			property_set("ro.boot.mode", "sd");
++			break;
++		} else {
++			ERROR("ERROR,SDMMC DRIVERS NOT READY, RERRY=%d\n", i);
++		}
++	}
++}
+ 
+     for (size_t i = 0; i < ARRAY_SIZE(prop_map); i++) {
+         std::string value = property_get(prop_map[i].src_prop);
+diff --git a/init/init.h b/init/init.h
+index 219a842..757c452 100644
+--- a/init/init.h
++++ b/init/init.h
+@@ -29,6 +29,10 @@ extern const char *ENV[32];
+ #define EMMC_RETRY_COUNT 200
+ #define STORAGE_MEDIA "storagemedia=emmc"
+ 
++/* IMPORTANT: THE VALUE OF STORAGE_MEDIA MUST BE CONSISTANT WITH UBOOT */
++#define EMMC_RETRY_COUNT_SD 20
++#define STORAGE_MEDIA_SD "storagemedia=sd"
++
+ extern bool waiting_for_exec;
+ extern int have_console;
+ extern std::string console_name;
+-- 
+1.7.9.5
+

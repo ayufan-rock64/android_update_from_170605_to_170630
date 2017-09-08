@@ -1,0 +1,33 @@
+From 2336b830e8c8480cdc6c34eabf41b9e05f1f1088 Mon Sep 17 00:00:00 2001
+From: chenxiao <cx@rock-chips.com>
+Date: Fri, 19 May 2017 18:06:04 +0800
+Subject: [PATCH 1/6] fix weixin capture switch quickly causes bug.
+
+Change-Id: I22ec5206b6389741807c18c560a71a9e67908449
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ CameraHal/CameraIspAdapter.cpp |    7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/CameraHal/CameraIspAdapter.cpp b/CameraHal/CameraIspAdapter.cpp
+index a114e78..bf87604 100755
+--- a/CameraHal/CameraIspAdapter.cpp
++++ b/CameraHal/CameraIspAdapter.cpp
+@@ -160,7 +160,12 @@ int CameraIspAdapter::cameraCreate(int cameraId)
+ 	int i =0;
+ 
+ 	preview_frame_inval = pCamInfo->mHardInfo.mSensorInfo.awb_frame_skip;
+-	
++
++    //fix weixin capture switch fastly bug.
++    const char* cameraCallProcess = getCallingProcess();
++    if (strstr("com.tencent.mm,com.tencent.mm:tools", cameraCallProcess))
++        preview_frame_inval = 0;
++
+     pCamInfo->mLibIspVersion = CONFIG_SILICONIMAGE_LIBISP_VERSION;
+ 	
+ 	for(i=0; i<4; i++){
+-- 
+1.7.9.5
+

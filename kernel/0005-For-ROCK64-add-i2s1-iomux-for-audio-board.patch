@@ -1,0 +1,138 @@
+From c6e4901dc6576f609f09ce58f75d424cc4529c96 Mon Sep 17 00:00:00 2001
+From: tug <tug@skyth-tek.com>
+Date: Thu, 6 Jul 2017 16:05:03 +0800
+Subject: [PATCH 05/13] For ROCK64:add i2s1 iomux for audio board add sdcard
+ boot support,open supports-emmc if sdcard boot add
+ led control add 100M mac
+
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ arch/arm64/boot/dts/rk322xh-evb.dtsi    |    1 +
+ arch/arm64/boot/dts/rk322xh.dtsi        |   11 +++++++++++
+ arch/arm64/boot/dts/rk3328-box-plus.dts |   20 ++++++++++++++------
+ block/partitions/rk.c                   |    5 +++++
+ 4 files changed, 31 insertions(+), 6 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/rk322xh-evb.dtsi b/arch/arm64/boot/dts/rk322xh-evb.dtsi
+index 9f2a743..475db67 100644
+--- a/arch/arm64/boot/dts/rk322xh-evb.dtsi
++++ b/arch/arm64/boot/dts/rk322xh-evb.dtsi
+@@ -269,6 +269,7 @@
+ 	clock-freq-min-max = <400000 37500000>;
+ 	supports-highspeed;
+ 	supports-sd;
++	//supports-emmc;
+ 	broken-cd;
+ 	card-detect-delay = <800>;
+ 	ignore-pm-notify;
+diff --git a/arch/arm64/boot/dts/rk322xh.dtsi b/arch/arm64/boot/dts/rk322xh.dtsi
+index 0ec135b..11e3bfd 100644
+--- a/arch/arm64/boot/dts/rk322xh.dtsi
++++ b/arch/arm64/boot/dts/rk322xh.dtsi
+@@ -502,6 +502,17 @@
+ 		dmas = <&pdma 14>, <&pdma 15>;
+ 		#dma-cells = <2>;
+ 		dma-names = "tx", "rx";
++		pinctrl-names = "default", "sleep";
++		pinctrl-0 = <&i2s1_mclk
++                              &i2s1_sclk
++                              &i2s1_lrckrx
++                              &i2s1_lrcktx
++                              &i2s1_sdi
++                              &i2s1_sdo
++                              &i2s1_sdio1
++                              &i2s1_sdio2
++                              &i2s1_sdio3>;
++                pinctrl-1 = <&i2s1_sleep>;
+ 		status = "disabled";
+ 	};
+ 
+diff --git a/arch/arm64/boot/dts/rk3328-box-plus.dts b/arch/arm64/boot/dts/rk3328-box-plus.dts
+index 3c5a628..0609ed2 100644
+--- a/arch/arm64/boot/dts/rk3328-box-plus.dts
++++ b/arch/arm64/boot/dts/rk3328-box-plus.dts
+@@ -44,7 +44,7 @@
+ 
+ #include "rk3328.dtsi"
+ #include "rk3328-evb.dtsi"
+-#include "rk3328-box-plus-dram-timing.dtsi"
++/*#include "rk3328-box-plus-dram-timing.dtsi"*/
+ #include "rk-stb-keymap.dtsi"
+ 
+ / {
+@@ -55,14 +55,22 @@
+ 	leds {
+ 		compatible = "gpio-leds";
+ 
+-		power-green {
+-			gpios = <&rk805 0 GPIO_ACTIVE_LOW>;
++		//OUT2
++		power-white {
++			gpios = <&rk805 0 GPIO_ACTIVE_HIGH>;
++			linux,default-trigger = "none";
++			default-state = "on";
++			mode = <0x23>;
++		};
++		//OUT1
++		standby-red {
++			gpios = <&rk805 1 GPIO_ACTIVE_LOW>;
+ 			linux,default-trigger = "none";
+ 			default-state = "on";
+ 			mode = <0x23>;
+ 		};
+ 
+-		net-green {
++		/*net-green {
+ 			gpios = <&gpio2 GPIO_B7 GPIO_ACTIVE_HIGH>;
+ 			linux,default-trigger = "none";
+ 			default-state = "off";
+@@ -81,7 +89,7 @@
+ 			linux,default-trigger = "ir";
+ 			default-state = "off";
+ 			mode = <0x00>;
+-		};
++		};*/
+ 	};
+ 
+ 	wireless-wlan {
+@@ -124,7 +132,7 @@
+ };
+ 
+ &gmac2phy {
+-	status = "disabled";
++	status = "okay";
+ };
+ 
+ &sdio {
+diff --git a/block/partitions/rk.c b/block/partitions/rk.c
+index 0a20aba..cc113ed 100755
+--- a/block/partitions/rk.c
++++ b/block/partitions/rk.c
+@@ -277,6 +277,7 @@ static int parse_cmdline_partitions(sector_t n,
+ static void rkpart_bootmode_fixup(void)
+ {
+ 	const char mode[] = " androidboot.mode=emmc";
++	const char sd[] = " androidboot.mode=sd";
+ 	const char charger[] = " androidboot.charger.emmc=1";
+ 	char *new_command_line;
+ 	size_t saved_command_line_len = strlen(saved_command_line);
+@@ -284,11 +285,15 @@ static void rkpart_bootmode_fixup(void)
+ 	if (strstr(saved_command_line, "androidboot.mode=charger")) {
+ 		new_command_line = kzalloc(saved_command_line_len + strlen(charger) + 1, GFP_KERNEL);
+ 		sprintf(new_command_line, "%s%s", saved_command_line, charger);
++	} else if(strstr(saved_command_line, "storagemedia=sd")) {
++		new_command_line = kzalloc(saved_command_line_len + strlen(sd) + 1, GFP_KERNEL);
++		sprintf(new_command_line, "%s%s", saved_command_line, sd);
+ 	} else {
+ 		new_command_line = kzalloc(saved_command_line_len + strlen(mode) + 1, GFP_KERNEL);
+ 		sprintf(new_command_line, "%s%s", saved_command_line, mode);
+ 	}
+ 	saved_command_line = new_command_line;
++	printk("cmdline=%s\n",saved_command_line);
+ }
+ 
+ int rkpart_partition(struct parsed_partitions *state)
+-- 
+1.7.9.5
+

@@ -1,0 +1,28 @@
+From a022432350140b209d4e8c63a0bd29fc62c45811 Mon Sep 17 00:00:00 2001
+From: Andy Ye <Andy.Ye@rock-chips.com>
+Date: Thu, 1 Jun 2017 11:44:52 +0800
+Subject: [PATCH] vold:cryptfs:add bootanim when encrypt require before boot
+
+Change-Id: Ic60e5f6dedaf7fc82e9c5f3f1fb6a1150294389f
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ cryptfs.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/cryptfs.c b/cryptfs.c
+index 004eeab..7942250 100644
+--- a/cryptfs.c
++++ b/cryptfs.c
+@@ -1782,6 +1782,8 @@ static int cryptfs_restart_internal(int restart_main)
+         return -1;
+     }
+ 
++    property_set("service.bootanim.exit", "0");
++    property_set("ctl.start", "bootanim");
+     if (restart_main) {
+         /* Here is where we shut down the framework.  The init scripts
+          * start all services in one of three classes: core, main or late_start.
+-- 
+1.7.9.5
+

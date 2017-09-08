@@ -1,0 +1,38 @@
+From 63b2f1aeb1851baf6c09fd9b040569586915b0c3 Mon Sep 17 00:00:00 2001
+From: ZhuangXiaoLiang <zhuangxl@rock-chips.com>
+Date: Tue, 20 Jun 2017 09:29:32 +0800
+Subject: [PATCH 15/35] RK3368 GPU G6110_64: Add powervr.ini.
+
+Change-Id: Ieb19deb11ffae3bf8f5ce52669b5c52330143327
+Signed-off-by: ZhuangXiaoLiang <zhuangxl@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ gpu/G6110.mk                      |    4 ++++
+ gpu/libG6110/G6110_64/powervr.ini |    2 ++
+ 2 files changed, 6 insertions(+)
+ create mode 100644 gpu/libG6110/G6110_64/powervr.ini
+
+diff --git a/gpu/G6110.mk b/gpu/G6110.mk
+index 4a1f086..77ced5d 100755
+--- a/gpu/G6110.mk
++++ b/gpu/G6110.mk
+@@ -1,4 +1,8 @@
+ ifneq ($(strip $(TARGET_2ND_ARCH)), )
++# etc
++PRODUCT_COPY_FILES += \
++    vendor/rockchip/common/gpu/libG6110/G6110_64/powervr.ini:system/etc/powervr.ini
++
+ # lib
+ PRODUCT_COPY_FILES += \
+     vendor/rockchip/common/gpu/libG6110/G6110_64/lib/egl/egl.cfg:system/lib/egl/egl.cfg \
+diff --git a/gpu/libG6110/G6110_64/powervr.ini b/gpu/libG6110/G6110_64/powervr.ini
+new file mode 100644
+index 0000000..38d6750
+--- /dev/null
++++ b/gpu/libG6110/G6110_64/powervr.ini
+@@ -0,0 +1,2 @@
++[air.com.netfunmedia.ponycakemaker]
++AllowMultiSamplesInCopyTex=1
+-- 
+1.7.9.5
+

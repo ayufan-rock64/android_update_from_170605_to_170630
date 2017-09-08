@@ -1,0 +1,33 @@
+From 94334b1017a844e25083dd4fc44e4009b8bd1c84 Mon Sep 17 00:00:00 2001
+From: tug <tug@skyth-tek.com>
+Date: Tue, 6 Jun 2017 14:18:21 +0800
+Subject: [PATCH 3/3] change product info for ROCK64
+
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ tools/buildinfo.sh |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/tools/buildinfo.sh b/tools/buildinfo.sh
+index dcb66bf..964e431 100755
+--- a/tools/buildinfo.sh
++++ b/tools/buildinfo.sh
+@@ -26,10 +26,10 @@ fi
+ if [ -n "$AB_OTA_UPDATER" ] ; then
+   echo "ro.build.ab_update=$AB_OTA_UPDATER"
+ fi
+-echo "ro.product.model=$PRODUCT_MODEL"
+-echo "ro.product.brand=$PRODUCT_BRAND"
+-echo "ro.product.name=$PRODUCT_NAME"
+-echo "ro.product.device=$TARGET_DEVICE"
++echo "ro.product.model=ROCK64"
++echo "ro.product.brand=PINE64"
++echo "ro.product.name=PINE64-ROCK64"
++echo "ro.product.device=PINE64-ROCK64"
+ echo "ro.product.board=$TARGET_BOOTLOADER_BOARD_NAME"
+ 
+ # These values are deprecated, use "ro.product.cpu.abilist"
+-- 
+1.7.9.5
+

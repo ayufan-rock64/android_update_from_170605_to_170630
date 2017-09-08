@@ -1,0 +1,32 @@
+From d2721c65c9282b31df7b79f85289ee6c4e636716 Mon Sep 17 00:00:00 2001
+From: Hao Xiaowei <hxw@rock-chips.com>
+Date: Wed, 7 Jun 2017 11:41:43 +0800
+Subject: [PATCH 2/3] ota:Fix system verification fail for ota incremental
+ block mode
+
+If Verified-boot features enabled, new system.img is generated during "make otapackage".
+This updated system.img should be flashed other than original one.
+
+Change-Id: Ibef929d7fc6fe0ee1d5ec03ac46b25d8574bfae6
+Signed-off-by: Hao Xiaowei <hxw@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ tools/releasetools/build_image.py |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/tools/releasetools/build_image.py b/tools/releasetools/build_image.py
+index 4b5299c..5a702fe 100755
+--- a/tools/releasetools/build_image.py
++++ b/tools/releasetools/build_image.py
+@@ -519,6 +519,8 @@ def BuildImage(in_dir, prop_dict, out_file, target_out=None):
+     e2fsck_command = ["e2fsck", "-f", "-n", unsparse_image]
+     (_, exit_code) = RunCommand(e2fsck_command)
+ 
++    print unsparse_image, "=>", os.getcwd()
++    shutil.copy2(unsparse_image,os.getcwd())
+     os.remove(unsparse_image)
+ 
+   return exit_code == 0
+-- 
+1.7.9.5
+

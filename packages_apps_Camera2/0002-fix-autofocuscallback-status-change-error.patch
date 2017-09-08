@@ -1,0 +1,32 @@
+From 2b061abfd6d658b197c235220ff61c886a9b3fc5 Mon Sep 17 00:00:00 2001
+From: Xu Hongfei <xuhf@rock-chips.com>
+Date: Fri, 2 Jun 2017 19:54:32 +0800
+Subject: [PATCH 2/2] fix autofocuscallback status change error.
+
+Change-Id: Ibc3c04f0991e0e5612008ac2a8727f51063e1715
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ src/com/android/camera/PhotoModule.java |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/com/android/camera/PhotoModule.java b/src/com/android/camera/PhotoModule.java
+index 28f0e3b..4e6041e 100644
+--- a/src/com/android/camera/PhotoModule.java
++++ b/src/com/android/camera/PhotoModule.java
+@@ -1755,10 +1755,10 @@ public class PhotoModule
+ 
+             mAutoFocusTime = System.currentTimeMillis() - mFocusStartTime;
+             Log.v(TAG, "mAutoFocusTime = " + mAutoFocusTime + "ms   focused = "+focused);
+-            if (mAutoFocusTime < 500) {
++            /*if (mAutoFocusTime < 500) {
+                 Log.v(TAG, "drop too short focus result");
+                 return;
+-            }
++            }*/
+             setCameraState(IDLE);
+             mFocusManager.onAutoFocus(focused, false);
+         }
+-- 
+1.7.9.5
+

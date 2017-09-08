@@ -1,0 +1,31 @@
+From 00131bca321a900132639ce683979af9a411a759 Mon Sep 17 00:00:00 2001
+From: Hao Xiaowei <hxw@rock-chips.com>
+Date: Thu, 15 Jun 2017 20:37:03 +0800
+Subject: [PATCH 09/35] Revert  "CTS : In order to pass the test
+ android.media.cts.MediaCodecCapabilitiesTest#testGetMaxSupportedInstances"
+
+This reverts commit 30c9681a7fcbcd47877d8a6edc5a9e3802e93089.
+
+Change-Id: I259f84e9eb610c3adec756a749657b174ce2e918
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ vpu/etc/media_codecs.xml |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/vpu/etc/media_codecs.xml b/vpu/etc/media_codecs.xml
+index 5669c15..dabdf06 100755
+--- a/vpu/etc/media_codecs.xml
++++ b/vpu/etc/media_codecs.xml
+@@ -170,7 +170,7 @@ Only the three quirks included above are recognized at this point:
+ 	    <Limit name="blocks-per-second" max="244800" min="1"/>
+ 	    <Limit name="bitrate" range="1-10000000"/>
+ 	    <Feature name="adaptive-playback"/>
+-	    <Limit name="concurrent-instances" max="10" />
++	    <Limit name="concurrent-instances" max="6" />
+         </MediaCodec>
+     </Decoders>
+ 
+-- 
+1.7.9.5
+

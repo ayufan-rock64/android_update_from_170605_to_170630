@@ -1,0 +1,56 @@
+From 4d1ce88b9767d22753aec5168fb2eef317d92b8b Mon Sep 17 00:00:00 2001
+From: dxj <dxj@rock-chips.com>
+Date: Mon, 5 Jun 2017 17:47:05 +0800
+Subject: [PATCH 5/6] add px3se support
+
+Change-Id: Ic9595546dc05ed8169983e577d0a8a33a8dff4cc
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ CameraHal/Android.mk    |    2 +-
+ Config/Android.mk       |    2 +-
+ Config/rk32xx_camera.mk |    2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/CameraHal/Android.mk b/CameraHal/Android.mk
+index dbf1387..9d58ddd 100644
+--- a/CameraHal/Android.mk
++++ b/CameraHal/Android.mk
+@@ -289,7 +289,7 @@ LOCAL_CFLAGS += -DTARGET_RK32
+ LOCAL_CFLAGS += -DHAL_MOCKUP
+ endif
+ 
+-ifneq ($(filter rk322x rk312x rk3126c rk3128, $(strip $(TARGET_BOARD_PLATFORM))), )
++ifneq ($(filter rk322x rk312x rk3126c rk3128 px3se, $(strip $(TARGET_BOARD_PLATFORM))), )
+ #LOCAL_CFLAGS += -DTARGET_BOARD_PLATFORM_RK30XX
+ LOCAL_CFLAGS += -DTARGET_RK312x
+ LOCAL_CFLAGS += -DHAL_MOCKUP
+diff --git a/Config/Android.mk b/Config/Android.mk
+index f3e4e91..24d35f1 100644
+--- a/Config/Android.mk
++++ b/Config/Android.mk
+@@ -68,7 +68,7 @@ LOCAL_MODULE_SUFFIX := .so
+ include $(BUILD_PREBUILT)
+ endif
+ 
+-ifneq ($(filter rk322x rk312x rk3126c rk3128, $(strip $(TARGET_BOARD_PLATFORM))), )
++ifneq ($(filter rk322x rk312x rk3126c rk3128 px3se, $(strip $(TARGET_BOARD_PLATFORM))), )
+ #include $(CLEAR_VARS)
+ #LOCAL_MODULE := libisp_silicomimageisp_api
+ LOCAL_MODULE_TAGS := optional
+diff --git a/Config/rk32xx_camera.mk b/Config/rk32xx_camera.mk
+index 1989386..2ad54f8 100644
+--- a/Config/rk32xx_camera.mk
++++ b/Config/rk32xx_camera.mk
+@@ -201,7 +201,7 @@ PRODUCT_PACKAGES += \
+     libisp_silicomimageisp_api
+ endif
+ 
+-ifneq ($(filter rk322x rk312x rk3126c rk3128, $(strip $(TARGET_BOARD_PLATFORM))), )
++ifneq ($(filter rk322x rk312x rk3126c rk3128 px3se, $(strip $(TARGET_BOARD_PLATFORM))), )
+ PRODUCT_PACKAGES += \
+     libisp_silicomimageisp_api
+ endif
+-- 
+1.7.9.5
+

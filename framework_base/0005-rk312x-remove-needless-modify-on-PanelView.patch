@@ -1,0 +1,72 @@
+From c3ee49611280fea0a7f6461c43d2d5405bfb974d Mon Sep 17 00:00:00 2001
+From: Huacong Yang <will.yang@rock-chips.com>
+Date: Fri, 19 May 2017 19:51:11 +0800
+Subject: [PATCH 05/14] rk312x: remove needless modify on PanelView
+
+Change-Id: Id6d208809a7caee9b9b792ba5efae0d9632769a6
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ .../systemui/statusbar/phone/PanelView.java        |   25 ++------------------
+ 1 file changed, 2 insertions(+), 23 deletions(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/PanelView.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/PanelView.java
+index 5e28112..a6a5742 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/PanelView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/PanelView.java
+@@ -44,8 +44,6 @@ import com.android.systemui.statusbar.policy.HeadsUpManager;
+ 
+ import java.io.FileDescriptor;
+ import java.io.PrintWriter;
+-import android.os.SystemProperties;
+-import android.app.KeyguardManager;
+ 
+ public abstract class PanelView extends FrameLayout {
+     public static final boolean DEBUG = PanelBar.DEBUG;
+@@ -225,9 +223,7 @@ public abstract class PanelView extends FrameLayout {
+         }
+ 
+         // On expanding, single mouse click expands the panel instead of dragging.
+-        String platform = SystemProperties.get("ro.board.platform");
+-        if (isFullyCollapsed() && event.isFromSource(InputDevice.SOURCE_MOUSE)
+-                && !"rk312x".equals(platform) && !"rk3126c".equals(platform)) {
++        if (isFullyCollapsed() && event.isFromSource(InputDevice.SOURCE_MOUSE)) {
+             if (event.getAction() == MotionEvent.ACTION_UP) {
+                 expand(true);
+             }
+@@ -405,13 +401,7 @@ public abstract class PanelView extends FrameLayout {
+                                 EventLogConstants.SYSUI_LOCKSCREEN_GESTURE_SWIPE_UP_UNLOCK,
+                                 heightDp, velocityDp);
+                     }
+-	    if("rk312x".equals(SystemProperties.get("ro.board.platform")) || 
+-                "rk3126c".equals(SystemProperties.get("ro.board.platform"))){
+-	    	if(mExpandedFraction>0f)
+-			fling(vel, expand, isFalseTouch(x, y));
+-	    }else
+-	    	fling(vel, expand, isFalseTouch(x, y));
+-
++            fling(vel, expand, isFalseTouch(x, y));
+             onTrackingStopped(expand);
+             mUpdateFlingOnLayout = expand && mPanelClosedOnDown && !mHasLayoutedSinceDown;
+             if (mUpdateFlingOnLayout) {
+@@ -764,17 +754,6 @@ public abstract class PanelView extends FrameLayout {
+         }
+ 
+         mExpandedHeight = Math.max(0, mExpandedHeight);
+-
+-        if("rk312x".equals(SystemProperties.get("ro.board.platform")) || 
+-                "rk3126c".equals(SystemProperties.get("ro.board.platform"))){
+-            KeyguardManager mKeyguardManager = (KeyguardManager) getContext().getSystemService(Context.KEYGUARD_SERVICE);
+-            boolean flag = mKeyguardManager.inKeyguardRestrictedInputMode();
+-            if(flag){
+-                if(mExpandedHeight <= fhWithoutOverExpansion/1.5){
+-                    mExpandedHeight = 0;
+-                }
+-            }
+-        }
+         mExpandedFraction = Math.min(1f, fhWithoutOverExpansion == 0
+                 ? 0
+                 : mExpandedHeight / fhWithoutOverExpansion);
+-- 
+1.7.9.5
+

@@ -1,0 +1,31 @@
+From b6a41372efe2af1dd5bad97936e9352e7c0b9b8e Mon Sep 17 00:00:00 2001
+From: "jkand.huang" <jkand.huang@rock-chips.com>
+Date: Fri, 19 May 2017 14:54:33 +0800
+Subject: [PATCH 04/14] fix N setupwizard error. reazon is frpHelper can not
+ finish job in 10s, so enlarge to 20s.
+
+Change-Id: I941db0333a95dfe41b7d7d1ed7fa87d3ea1e1d19
+Signed-off-by: jkand.huang <jkand.huang@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ core/java/android/os/Handler.java |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/core/java/android/os/Handler.java b/core/java/android/os/Handler.java
+index 3c7c962..5fb938b 100644
+--- a/core/java/android/os/Handler.java
++++ b/core/java/android/os/Handler.java
+@@ -407,6 +407,10 @@ public class Handler {
+      */
+     public final boolean postDelayed(Runnable r, long delayMillis)
+     {
++        if(r != null && r.toString().contains("com.google.android.setupwizard.util.FrpHelper") && (delayMillis == 10000L)){
++            Log.d(TAG, "---setupwizard.util.FrqHelper---" + r.toString());
++            return sendMessageDelayed(getPostMessage(r), delayMillis*2);
++        }
+         return sendMessageDelayed(getPostMessage(r), delayMillis);
+     }
+     
+-- 
+1.7.9.5
+

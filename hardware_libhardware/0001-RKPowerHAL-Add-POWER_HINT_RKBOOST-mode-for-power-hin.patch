@@ -1,0 +1,28 @@
+From d0c81ba009240cb9ab38d75d7e88190055349c2a Mon Sep 17 00:00:00 2001
+From: Hao Xiaowei <hxw@rock-chips.com>
+Date: Tue, 23 May 2017 13:53:45 +0800
+Subject: [PATCH] RKPowerHAL: Add POWER_HINT_RKBOOST mode for power hint func
+
+Change-Id: I6c5a6af496126fa59df97734293e44c17c6df96f
+Signed-off-by: Hao Xiaowei <hxw@rock-chips.com>
+---
+ include/hardware/power.h |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/include/hardware/power.h b/include/hardware/power.h
+index 360f3cd..d47a4f0 100644
+--- a/include/hardware/power.h
++++ b/include/hardware/power.h
+@@ -66,7 +66,8 @@ typedef enum {
+     POWER_HINT_VR_MODE = 0x00000007,
+     POWER_HINT_LAUNCH = 0x00000008,
+     POWER_HINT_DISABLE_TOUCH = 0x00000009,
+-    POWER_HINT_PERFORMANCE = 0x0000000A
++    POWER_HINT_PERFORMANCE = 0x0000000A,
++    POWER_HINT_RKBOOST = 0x0000000B
+ } power_hint_t;
+ 
+ typedef enum {
+-- 
+1.7.9.5
+

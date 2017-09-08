@@ -1,0 +1,30 @@
+From 2f40aecfce14ca1d75718849a8e451213dd5f648 Mon Sep 17 00:00:00 2001
+From: Huacong Yang <will.yang@rock-chips.com>
+Date: Fri, 19 May 2017 14:12:16 +0800
+Subject: [PATCH 02/14] rk3126c: fix mouse can't open lockscreen
+
+Change-Id: I0fbfa025316cb8ff7fbef03a67fbebbfa272b59c
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ .../systemui/statusbar/phone/PanelView.java        |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/packages/SystemUI/src/com/android/systemui/statusbar/phone/PanelView.java b/packages/SystemUI/src/com/android/systemui/statusbar/phone/PanelView.java
+index bee6540..5e28112 100644
+--- a/packages/SystemUI/src/com/android/systemui/statusbar/phone/PanelView.java
++++ b/packages/SystemUI/src/com/android/systemui/statusbar/phone/PanelView.java
+@@ -225,8 +225,9 @@ public abstract class PanelView extends FrameLayout {
+         }
+ 
+         // On expanding, single mouse click expands the panel instead of dragging.
++        String platform = SystemProperties.get("ro.board.platform");
+         if (isFullyCollapsed() && event.isFromSource(InputDevice.SOURCE_MOUSE)
+-                && !"rk312x".equals(SystemProperties.get("ro.board.platform"))) {
++                && !"rk312x".equals(platform) && !"rk3126c".equals(platform)) {
+             if (event.getAction() == MotionEvent.ACTION_UP) {
+                 expand(true);
+             }
+-- 
+1.7.9.5
+

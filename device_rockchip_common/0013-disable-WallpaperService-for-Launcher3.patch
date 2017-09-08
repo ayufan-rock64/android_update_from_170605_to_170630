@@ -1,0 +1,26 @@
+From c47748641ba7ee597a064848e1893f0af4758675 Mon Sep 17 00:00:00 2001
+From: tug <tug@skyth-tek.com>
+Date: Tue, 6 Jun 2017 14:19:09 +0800
+Subject: [PATCH 13/15] disable WallpaperService for Launcher3
+
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ .../frameworks/base/core/res/res/values/config.xml |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tv/overlay/frameworks/base/core/res/res/values/config.xml b/tv/overlay/frameworks/base/core/res/res/values/config.xml
+index 3d0ad67..903365b 100644
+--- a/tv/overlay/frameworks/base/core/res/res/values/config.xml
++++ b/tv/overlay/frameworks/base/core/res/res/values/config.xml
+@@ -58,6 +58,6 @@
+     <string translatable="false" name="config_tvRemoteServicePackage">com.google.android.tv.remote.service</string>
+ 
+     <!-- True if WallpaperService is enabled -->
+-    <bool name="config_enableWallpaperService">false</bool>
++    <bool name="config_enableWallpaperService">true</bool>
+ 
+ </resources>
+-- 
+1.7.9.5
+

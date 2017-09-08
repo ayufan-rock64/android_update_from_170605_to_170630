@@ -1,0 +1,30 @@
+From 599b8a5943650d40877a04e4f29f9836ec1116e1 Mon Sep 17 00:00:00 2001
+From: Hao Xiaowei <hxw@rock-chips.com>
+Date: Thu, 29 Jun 2017 08:54:37 +0800
+Subject: [PATCH 7/8] Revert "[enc]: Add VPUMemClose operation in enc
+ component deinit process"
+
+This reverts commit 29ac4d5fd4e093eaac6ec7786f2a7b507ac41a95.
+
+Change-Id: I295f972d54bd75023cf8c2735578f1de7acac918
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ component/video/enc/Rkvpu_OMX_Venc.c |    1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/component/video/enc/Rkvpu_OMX_Venc.c b/component/video/enc/Rkvpu_OMX_Venc.c
+index 97aab6c..7c593ca 100755
+--- a/component/video/enc/Rkvpu_OMX_Venc.c
++++ b/component/video/enc/Rkvpu_OMX_Venc.c
+@@ -1748,7 +1748,6 @@ OMX_ERRORTYPE Rockchip_OMX_ComponentDeInit(OMX_HANDLETYPE hComponent)
+     }
+     pRockchipComponent = (ROCKCHIP_OMX_BASECOMPONENT *)pOMXComponent->pComponentPrivate;
+ 
+-    VPUMemClose();
+     pVideoEnc = (RKVPU_OMX_VIDEOENC_COMPONENT *)pRockchipComponent->hComponentHandle;
+     if (pVideoEnc->fp_enc_out != NULL) {
+         fclose(pVideoEnc->fp_enc_out);
+-- 
+1.7.9.5
+

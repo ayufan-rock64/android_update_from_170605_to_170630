@@ -1,0 +1,41 @@
+From 9d475407fe6d20c03d467b54cec3da9f53131dd0 Mon Sep 17 00:00:00 2001
+From: Hao Xiaowei <hxw@rock-chips.com>
+Date: Mon, 26 Jun 2017 14:42:02 +0800
+Subject: [PATCH 2/2] Add VPUMemClose interface for vpu_mem_dmabuf
+
+Change-Id: I3477882ab3de16cc56ae8cb1abdfc2fc8fbed618
+Signed-off-by: Hao Xiaowei <hxw@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ common/vpu_mem_dmabuf.c |   12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+ mode change 100644 => 100755 common/vpu_mem_dmabuf.c
+
+diff --git a/common/vpu_mem_dmabuf.c b/common/vpu_mem_dmabuf.c
+old mode 100644
+new mode 100755
+index 3547394..57cb9e1
+--- a/common/vpu_mem_dmabuf.c
++++ b/common/vpu_mem_dmabuf.c
+@@ -555,6 +555,18 @@ RK_S32 VPUMallocLinear(VPUMemLinear_t *p, RK_U32 size)
+     return err;
+ }
+ 
++RK_S32 VPUMemClose()
++{
++    struct vpu_dmabuf_dev *dev = vpm_dmabuf.dev;
++    if(NULL == dev){
++        VPM_DEBUG("%s:%d vpu_dmabuf_dev already closed");
++        return -1;
++    }else{
++        return vpu_dmabuf_close(dev);
++    }
++}
++
++
+ RK_S32 VPUFreeLinear(VPUMemLinear_t *p)
+ {
+     VPU_MEM_TEST;
+-- 
+1.7.9.5
+

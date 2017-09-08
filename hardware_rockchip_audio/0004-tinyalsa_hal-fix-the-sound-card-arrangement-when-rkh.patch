@@ -1,0 +1,29 @@
+From 03b111b6736b48ec17ffee4906caecf59323d8c1 Mon Sep 17 00:00:00 2001
+From: zhangjun <zhangjun@rock-chips.com>
+Date: Mon, 5 Jun 2017 15:25:05 +0800
+Subject: [PATCH 4/4] tinyalsa_hal: fix the sound card arrangement when
+ rkhdmidpsound is configured
+
+Change-Id: I1129d2efb41c4c55f67da42b8a29bff3eb617b6f
+Signed-off-by: zhangjun <zhangjun@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ tinyalsa_hal/audio_hw.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tinyalsa_hal/audio_hw.c b/tinyalsa_hal/audio_hw.c
+index a7047df..e361c39 100755
+--- a/tinyalsa_hal/audio_hw.c
++++ b/tinyalsa_hal/audio_hw.c
+@@ -423,7 +423,7 @@ static int read_snd_card_info(void)
+     ALOGD("read_snd_card_info buf1 = %s",buf1);
+     ALOGD("read_snd_card_info buf2 = %s",buf2);
+     if (strstr (buf1, "SPDIF") || strstr (buf1, "rockchipspdif")) {
+-        if (strstr(buf2, "HDMI") || strstr(buf2, "rockchiphdmi") || strstr(buf2, "rockchipcdndpfb") || strstr(buf2, "rockchipcdndpso")) {
++        if (strstr(buf2, "HDMI") || strstr(buf2, "rockchiphdmi") || strstr(buf2, "rockchipcdndpfb") || strstr(buf2, "rockchipcdndpso") || strstr(buf2,"rkhdmidpsound")) {
+             ALOGD("now is 3 snd card mode");
+             PCM_CARD = 0;
+             PCM_CARD_SPDIF = 1;
+-- 
+1.7.9.5
+

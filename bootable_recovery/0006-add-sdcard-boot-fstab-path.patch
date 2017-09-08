@@ -1,0 +1,41 @@
+From 5f8481ef0d4efda69beb159e32ca45090459ae03 Mon Sep 17 00:00:00 2001
+From: tug <tug@skyth-tek.com>
+Date: Fri, 9 Jun 2017 14:16:48 +0800
+Subject: [PATCH 6/7] add sdcard boot fstab path
+
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ emmcutils/rk_emmcutils.cpp |    2 ++
+ roots.cpp                  |    2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/emmcutils/rk_emmcutils.cpp b/emmcutils/rk_emmcutils.cpp
+index d7ebc88..4da5fc5 100644
+--- a/emmcutils/rk_emmcutils.cpp
++++ b/emmcutils/rk_emmcutils.cpp
+@@ -28,6 +28,8 @@ int getEmmcState() {
+ 	result = 2;
+     } else if(!strcmp(bootmode, "emmc")) {
+         result = 1;
++    } else if(!strcmp(bootmode, "sd")) {
++        result = 3;
+     }else {
+         result = 0;
+     }
+diff --git a/roots.cpp b/roots.cpp
+index 3597afc..f674f70 100755
+--- a/roots.cpp
++++ b/roots.cpp
+@@ -49,6 +49,8 @@ void load_volume_table()
+ 	fstab = fs_mgr_read_fstab("/etc/recovery.nvme.fstab");
+     } else if(emmcState == 1) {
+         fstab = fs_mgr_read_fstab("/etc/recovery.emmc.fstab");
++    } else if(emmcState == 3) {
++        fstab = fs_mgr_read_fstab("/etc/recovery.sd.fstab");
+     }else {
+         fstab = fs_mgr_read_fstab("/etc/recovery.fstab");
+     }
+-- 
+1.7.9.5
+

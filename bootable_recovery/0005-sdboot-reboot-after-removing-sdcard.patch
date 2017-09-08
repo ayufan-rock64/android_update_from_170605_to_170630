@@ -1,0 +1,88 @@
+From d2ea722207a2db241c7698848dff96b88d9be444 Mon Sep 17 00:00:00 2001
+From: "jkand.huang" <jkand.huang@rock-chips.com>
+Date: Wed, 7 Jun 2017 15:53:54 +0800
+Subject: [PATCH 5/7] sdboot: reboot after removing sdcard.
+
+Change-Id: I69f6c00590b8a9da2a9358c1bccdb357520f30a0
+Signed-off-by: jkand.huang <jkand.huang@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ recovery.cpp |    4 ++--
+ sdboot.cpp   |    9 +++++++++
+ sdboot.h     |    1 +
+ 3 files changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/recovery.cpp b/recovery.cpp
+index db064a7..55089c1 100755
+--- a/recovery.cpp
++++ b/recovery.cpp
+@@ -2034,11 +2034,11 @@ int main(int argc, char **argv) {
+         wipe_data(false, device);
+     }
+ 
++    rksdboot.check_device_remove();
++
+     // Save logs and clean up before rebooting or shutting down.
+     finish_recovery(send_intent);
+ 
+-    rksdboot.check_device_remove();
+-
+     switch (after) {
+         case Device::SHUTDOWN:
+             ui->Print("Shutting down...\n");
+diff --git a/sdboot.cpp b/sdboot.cpp
+index ced80de..f0bb249 100644
+--- a/sdboot.cpp
++++ b/sdboot.cpp
+@@ -19,6 +19,7 @@
+ #include <cutils/properties.h>
+ #include <sys/types.h>
+ #include <sys/wait.h>
++#include "cutils/android_reboot.h"
+ #include "common.h"
+ #include "sdboot.h"
+ #include "roots.h"
+@@ -43,6 +44,7 @@ SDBoot::SDBoot(){
+     LOGI("ExternalSD_ROOT: %s\n", EX_SDCARD_ROOT.c_str()); 
+     status = INSTALL_ERROR;
+     bootwhere();
++    bUpdateModel = false;
+ }
+ bool SDBoot::isSDboot(){
+     return bSDBoot;
+@@ -394,6 +396,7 @@ int SDBoot::do_usb_mode_update(const char *pFile){
+     return status;
+ }
+ int SDBoot::do_rk_mode_update(const char *pFile){
++    bUpdateModel = true;
+     if (bSDBoot){
+         printf("SDBoot optarg=%s\n", optarg);
+         status = do_sd_mode_update(pFile);
+@@ -453,6 +456,12 @@ void SDBoot::check_device_remove(){
+         if (bUsbMounted)
+             checkUSBRemoved();
+     }
++
++    if(bUpdateModel){
++        ui->Print("reboot ...\n");
++        sync();
++        property_set(ANDROID_RB_PROPERTY, "reboot,");
++    }
+ }
+ void SDBoot::checkSDRemoved() {
+     Volume* v = volume_for_path(EX_SDCARD_ROOT.c_str());
+diff --git a/sdboot.h b/sdboot.h
+index 4997cec..7db06d9 100644
+--- a/sdboot.h
++++ b/sdboot.h
+@@ -38,6 +38,7 @@ private:
+     int status;
+     bool bSDBoot;
+     bool bUsbBoot;
++    bool bUpdateModel;
+     bool bSDMounted;
+     bool bUsbMounted;
+     std::string EX_SDCARD_ROOT;
+-- 
+1.7.9.5
+

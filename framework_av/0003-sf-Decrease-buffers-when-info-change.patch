@@ -1,0 +1,57 @@
+From c2eea527beecf98144785f2d3cf05787f1301866 Mon Sep 17 00:00:00 2001
+From: Hao Xiaowei <hxw@rock-chips.com>
+Date: Mon, 5 Jun 2017 19:36:27 +0800
+Subject: [PATCH 3/8] sf:Decrease buffers when info change
+
+Change-Id: I3c9ead6a24f81e9a8ab503aef15a94905ddf144c
+Signed-off-by: Hao Xiaowei <hxw@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ include/media/stagefright/CodecBase.h |    1 +
+ media/libstagefright/ACodec.cpp       |    4 ++--
+ media/libstagefright/MediaCodec.cpp   |    2 ++
+ 3 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/include/media/stagefright/CodecBase.h b/include/media/stagefright/CodecBase.h
+index cec4a53..fae1886 100644
+--- a/include/media/stagefright/CodecBase.h
++++ b/include/media/stagefright/CodecBase.h
+@@ -84,6 +84,7 @@ struct CodecBase : public AHandler, /* static */ ColorUtils {
+     virtual void signalRequestIDRFrame() = 0;
+     virtual void signalSetParameters(const sp<AMessage> &msg) = 0;
+     virtual void signalEndOfInputStream() = 0;
++    bool mGtsExoPlayer;
+     bool mSoftCodecPref;
+     void setSoftCodecPref(bool forcesoft){mSoftCodecPref = forcesoft;};
+ 
+diff --git a/media/libstagefright/ACodec.cpp b/media/libstagefright/ACodec.cpp
+index b5ddcd8..6601d84 100755
+--- a/media/libstagefright/ACodec.cpp
++++ b/media/libstagefright/ACodec.cpp
+@@ -1109,8 +1109,8 @@ status_t ACodec::configureOutputBuffersFromNativeWindow(
+     for (OMX_U32 extraBuffers = 2 + 1; /* condition inside loop */; extraBuffers--) {
+         OMX_U32 newBufferCount =
+             def.nBufferCountMin + *minUndequeuedBuffers + extraBuffers;
+-        if(def.nBufferCountActual < newBufferCount){
+-            def.nBufferCountActual = newBufferCount;
++        if(def.nBufferCountActual < newBufferCount || (mGtsExoPlayer && newBufferCount >= 20)){
++            def.nBufferCountActual = mGtsExoPlayer ? MIN(20, newBufferCount) : newBufferCount;
+             err = mOMX->setParameter(
+                     mNode, OMX_IndexParamPortDefinition, &def, sizeof(def));
+ 
+diff --git a/media/libstagefright/MediaCodec.cpp b/media/libstagefright/MediaCodec.cpp
+index f3a4a64..e1a877f 100644
+--- a/media/libstagefright/MediaCodec.cpp
++++ b/media/libstagefright/MediaCodec.cpp
+@@ -367,6 +367,8 @@ status_t MediaCodec::init(const AString &name, bool nameIsType, bool encoder) {
+         mCodec->setSoftCodecPref(true);
+         ALOGI("set mSoftCodecPref as true");
+     }
++    if (!strcmp(processName, "com.google.android.exoplayer.gts"))
++        mCodec->mGtsExoPlayer=true;
+ 
+     bool secureCodec = false;
+     if (nameIsType && !strncasecmp(name.c_str(), "video/", 6)) {
+-- 
+1.7.9.5
+

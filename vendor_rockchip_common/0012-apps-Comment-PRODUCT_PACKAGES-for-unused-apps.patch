@@ -1,0 +1,36 @@
+From ef6a33e2e0d17fcb10d7f4051c175c9e6b018f4c Mon Sep 17 00:00:00 2001
+From: cw <cw@rock-chips.com>
+Date: Mon, 19 Jun 2017 19:41:12 +0800
+Subject: [PATCH 12/35] apps: Comment PRODUCT_PACKAGES for unused apps
+
+Change-Id: I0d09bbfb8427fbae232cc7c8b67d0a4bff66a27c
+Signed-off-by: cw <cw@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ apps/apps.mk |   10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/apps/apps.mk b/apps/apps.mk
+index 0af525b..32c60e3 100755
+--- a/apps/apps.mk
++++ b/apps/apps.mk
+@@ -23,11 +23,11 @@ PRODUCT_PACKAGES += \
+     RkApkinstaller
+ endif
+ 
+-ifeq ($(strip $(TARGET_BOARD_PLATFORM)), rk3288)
+-PRODUCT_PACKAGES += \
+-    WinStartService \
+-    projectX
+-endif
++#ifeq ($(strip $(TARGET_BOARD_PLATFORM)), rk3288)
++#PRODUCT_PACKAGES += \
++#    WinStartService \
++#    projectX
++#endif
+ 
+ ifneq ($(filter rk312x rk3126c, $(TARGET_BOARD_PLATFORM)), )
+ PRODUCT_PACKAGES += \
+-- 
+1.7.9.5
+

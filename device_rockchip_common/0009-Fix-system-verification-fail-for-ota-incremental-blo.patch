@@ -1,0 +1,48 @@
+From 4f7fe6b5630dee6042b5e7e0403c75f47ba0f1dc Mon Sep 17 00:00:00 2001
+From: Hao Xiaowei <hxw@rock-chips.com>
+Date: Wed, 7 Jun 2017 11:46:46 +0800
+Subject: [PATCH 09/15] Fix system verification fail for ota incremental block
+ mode
+
+The correct ota increment operation for block mode:
+version 0:
+    1.Build project as normal(source && lunch && make)
+    2.make otapackage && ./mkimage.sh ota && save the taget zip file
+    3.Flash img located in IMAGE_PATH.
+version 1:
+    1.Made some modification and build as normal.
+    2.make otapackage && ./mkimage.sh ota && save the taget zip file
+    3.Generate incremental update.zip with 2 target zip.
+    4.Update device(flashed version 0) with the update.zip file.
+
+Change-Id: I9afc2a5bc9eb2a3227e212e4ed0cf77ceab3e91a
+Signed-off-by: Hao Xiaowei <hxw@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ mkimage.sh |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/mkimage.sh b/mkimage.sh
+index c8d0e3a..8060566 100755
+--- a/mkimage.sh
++++ b/mkimage.sh
+@@ -149,11 +149,16 @@ then
+ 	elif [ "$FSTYPE" = "ext3" ] || [ "$FSTYPE" = "ext4" ]
+ 	then
+         if [ "$PRODUCT_SYSTEM_VERITY" = "true" ]; then
++            if [ $TARGET == $BOOT_OTA ]
++            then
++                mv unsparse_system-*.img $IMAGE_PATH/system.img
++            else
+                 python ./build/tools/releasetools/build_image.py \
+                     $OUT/system $OUT/obj/PACKAGING/systemimage_intermediates/system_image_info.txt \
+                     $OUT/system.img $OUT/system
+                 echo -n "translate verified sparse image to raw image... "
+                 simg2img $OUT/system.img $IMAGE_PATH/system.img
++            fi
+         else
+                 #system_size=`ls -l $OUT/system.img | awk '{print $5;}'`
+                 system_size=$BOARD_SYSTEMIMAGE_PARTITION_SIZE
+-- 
+1.7.9.5
+

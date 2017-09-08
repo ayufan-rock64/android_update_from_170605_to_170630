@@ -1,0 +1,27 @@
+From 22f80e1c4b19caa82993742e70267e6568e2363c Mon Sep 17 00:00:00 2001
+From: Hao Xiaowei <hxw@rock-chips.com>
+Date: Thu, 15 Jun 2017 20:37:57 +0800
+Subject: [PATCH 4/8] sf:Initialize mSoftCodecPref as false
+
+Change-Id: I6a545da1f9d61efb52e742dcee95bac398f95058
+Signed-off-by: Hao Xiaowei <hxw@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ media/libstagefright/CodecBase.cpp |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/media/libstagefright/CodecBase.cpp b/media/libstagefright/CodecBase.cpp
+index f729d4d..e41530f 100644
+--- a/media/libstagefright/CodecBase.cpp
++++ b/media/libstagefright/CodecBase.cpp
+@@ -24,6 +24,7 @@
+ namespace android {
+ 
+ CodecBase::CodecBase() {
++    mSoftCodecPref = false;
+ }
+ 
+ CodecBase::~CodecBase() {
+-- 
+1.7.9.5
+

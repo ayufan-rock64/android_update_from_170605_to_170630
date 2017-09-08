@@ -1,0 +1,49 @@
+From 38ee595100c26946fd918a4b3bbdea97d6aa8e9c Mon Sep 17 00:00:00 2001
+From: cw <cw@rock-chips.com>
+Date: Mon, 12 Jun 2017 11:26:02 +0800
+Subject: [PATCH 2/2] Revert "abc: allow pull from /data/logs"
+
+This reverts commit cbe99c73db53cac2f4e354dc790f10291a2fb7da.
+
+Change-Id: I5acb574fa281eafef7b5b6937a36d9bd12542b82
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ adbd.te  |    5 -----
+ shell.te |    4 ----
+ 2 files changed, 9 deletions(-)
+
+diff --git a/adbd.te b/adbd.te
+index 6cefbb1..83a271b 100644
+--- a/adbd.te
++++ b/adbd.te
+@@ -38,11 +38,6 @@ allow adbd shell_data_file:file create_file_perms;
+ allow adbd profman_dump_data_file:dir r_dir_perms;
+ allow adbd profman_dump_data_file:file r_file_perms;
+ 
+-
+-# adb pull /data/logs.
+-allow adbd aplog_data_file:dir r_dir_perms;
+-allow adbd aplog_data_file:file r_file_perms;
+-
+ # adb push/pull sdcard.
+ allow adbd tmpfs:dir search;
+ allow adbd rootfs:lnk_file r_file_perms;  # /sdcard symlink
+diff --git a/shell.te b/shell.te
+index 84ca927..3e95b46 100644
+--- a/shell.te
++++ b/shell.te
+@@ -28,10 +28,6 @@ allow shell rootfs:dir r_dir_perms;
+ allow shell anr_data_file:dir r_dir_perms;
+ allow shell anr_data_file:file r_file_perms;
+ 
+-# read files in /data/logs
+-allow shell aplog_data_file:dir r_dir_perms;
+-allow shell aplog_data_file:file r_file_perms;
+-
+ # Access /data/local/tmp.
+ allow shell shell_data_file:dir create_dir_perms;
+ allow shell shell_data_file:file create_file_perms;
+-- 
+1.7.9.5
+

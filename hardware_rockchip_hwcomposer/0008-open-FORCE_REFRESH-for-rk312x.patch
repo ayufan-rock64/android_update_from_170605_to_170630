@@ -1,0 +1,27 @@
+From 8a8e2099effcd45dfa10325c869a71e8f99c2da2 Mon Sep 17 00:00:00 2001
+From: libin <bin.li@rock-chips.com>
+Date: Fri, 23 Jun 2017 14:28:59 +0800
+Subject: [PATCH 08/13] open FORCE_REFRESH for rk312x.
+
+Change-Id: I4a692d29eae83fc0209ab4595c78455f2a34ad97
+Signed-off-by: libin <bin.li@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ rk_hwcomposer.h |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/rk_hwcomposer.h b/rk_hwcomposer.h
+index f7a33da..0f549f6 100755
+--- a/rk_hwcomposer.h
++++ b/rk_hwcomposer.h
+@@ -87,6 +87,7 @@
+     #define HOTPLUG_MODE      1
+ #endif
+ #define ONLY_USE_ONE_VOP  1
++#define FORCE_REFRESH     1
+ #define VIDEO_WIN1_UI_DISABLE     1
+ #define VIRTUAL_UI_RESOLUTION     0
+ #elif defined(TARGET_BOARD_PLATFORM_RK322X)
+-- 
+1.7.9.5
+

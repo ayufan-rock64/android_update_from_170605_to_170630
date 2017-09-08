@@ -1,0 +1,27 @@
+From 190e4c4e66c737d465197a694d8d7aafba6e44c6 Mon Sep 17 00:00:00 2001
+From: Hans Yang <yhx@rock-chips.com>
+Date: Fri, 26 May 2017 16:33:25 +0800
+Subject: [PATCH 11/14] Bitmap: remove unuse debug log print
+
+Change-Id: I719bd39292363437318fdb214350394211f52fc7
+Signed-off-by: Hans Yang <yhx@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ graphics/java/android/graphics/Bitmap.java |    1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/graphics/java/android/graphics/Bitmap.java b/graphics/java/android/graphics/Bitmap.java
+index d0b3e8c..49721cf 100644
+--- a/graphics/java/android/graphics/Bitmap.java
++++ b/graphics/java/android/graphics/Bitmap.java
+@@ -820,7 +820,6 @@ public final class Bitmap implements Parcelable {
+      * @throws IllegalArgumentException if the width or height are <= 0
+      */
+     public static Bitmap createBitmap(int width, int height, Config config) {
+-        Log.e(TAG, "===========the width is" + width +"the height is" + height);
+         return createBitmap(width, height, config, true);
+     }
+ 
+-- 
+1.7.9.5
+

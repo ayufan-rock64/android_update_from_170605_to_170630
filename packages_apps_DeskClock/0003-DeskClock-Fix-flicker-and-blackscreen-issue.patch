@@ -1,0 +1,63 @@
+From 9cd9e493c1652f2c83d9d26710ab3b61e08af644 Mon Sep 17 00:00:00 2001
+From: Andy Ye <Andy.Ye@rock-chips.com>
+Date: Mon, 5 Jun 2017 14:44:56 +0800
+Subject: [PATCH 3/3] DeskClock: Fix flicker and blackscreen issue.
+
+Change the items in SettingsActivity and then exit, you can see flick
+    or blackscreen in short time.
+
+Change-Id: Ie76350727805f1bd07adab487d0c016bb90e8b96
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ src/com/android/deskclock/DeskClock.java           |   17 ++++++++---------
+ .../deskclock/settings/SettingsActivity.java       |    5 +++++
+ 2 files changed, 13 insertions(+), 9 deletions(-)
+
+diff --git a/src/com/android/deskclock/DeskClock.java b/src/com/android/deskclock/DeskClock.java
+index e0189a0..f04b8d6 100644
+--- a/src/com/android/deskclock/DeskClock.java
++++ b/src/com/android/deskclock/DeskClock.java
+@@ -222,15 +222,14 @@ public class DeskClock extends BaseActivity
+ 
+         if (mRecreateActivity) {
+             mRecreateActivity = false;
+-
+-            // A runnable must be posted here or the new DeskClock activity will be recreated in a
+-            // paused state, even though it is the foreground activity.
+-            mViewPager.post(new Runnable() {
+-                @Override
+-                public void run() {
+-                    recreate();
+-                }
+-            });
++            /*
++            * (1) the reason of recreate is called here not like android M which called in
++            *     onActivityResult: if called in onActivityResult, the DeskClock activity
++            *     maybe recreated in a paused state, even though it is the foreground activity.
++            * (2) the reason of delete the runnable: the runnable will lead to the flicker
++            *     screen or blackscreen issue when settingsActivity's item is changed.
++            */
++            recreate();
+         }
+     }
+ 
+diff --git a/src/com/android/deskclock/settings/SettingsActivity.java b/src/com/android/deskclock/settings/SettingsActivity.java
+index c5d2284..b5b2457 100644
+--- a/src/com/android/deskclock/settings/SettingsActivity.java
++++ b/src/com/android/deskclock/settings/SettingsActivity.java
+@@ -109,6 +109,11 @@ public final class SettingsActivity extends BaseActivity {
+         public void onCreate(Bundle savedInstanceState) {
+             super.onCreate(savedInstanceState);
+ 
++            //fix google native issue, cannot save and effect settingActivity's setting item
++            if(Utils.isNOrLater()) {
++                getPreferenceManager().setStorageDeviceProtected();
++            }
++
+             addPreferencesFromResource(R.xml.settings);
+             loadTimeZoneList();
+         }
+-- 
+1.7.9.5
+

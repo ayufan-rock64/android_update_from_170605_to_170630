@@ -1,0 +1,29 @@
+From da449098cdce86c2d9f3ef5d5b187c59acb614f1 Mon Sep 17 00:00:00 2001
+From: chenzhen <chenzhen@rock-chips.com>
+Date: Mon, 22 May 2017 10:24:23 +0800
+Subject: [PATCH 1/2] rk_ext: add ION_FLAG_CACHED_NEEDS_SYNC in flags for
+ buffer cachable for CPU
+
+Change-Id: Id660175da78d3aec7b31b8b45fbbd20ae0a9f352
+Signed-off-by: chenzhen <chenzhen@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ alloc_device.cpp |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/alloc_device.cpp b/alloc_device.cpp
+index 5688796..aaeb017 100755
+--- a/alloc_device.cpp
++++ b/alloc_device.cpp
+@@ -141,7 +141,7 @@ static int gralloc_alloc_buffer(alloc_device_t *dev, size_t size, int usage, buf
+ 				|| has_usage_flags(usage, GRALLOC_USAGE_SW_READ_OFTEN) )
+ 		{
+ 			D("to ask for cachable buffer for CPU access, usage : 0x%x", usage);
+-			flags = ION_FLAG_CACHED;
++			flags = ION_FLAG_CACHED | ION_FLAG_CACHED_NEEDS_SYNC;
+ 		}
+ #endif
+ 		ret = ion_alloc(m->ion_client, size, 0, heap_mask, flags, &(ion_hnd));
+-- 
+1.7.9.5
+

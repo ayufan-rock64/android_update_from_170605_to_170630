@@ -1,0 +1,29 @@
+From 181e2e6c3020bdf89de5e40ede5a1ed896dc1592 Mon Sep 17 00:00:00 2001
+From: Mark Yao <mark.yao@rock-chips.com>
+Date: Mon, 5 Jun 2017 18:57:37 +0800
+Subject: [PATCH 4/7] correct gr_get_row_bytes with surface->row_bytes
+
+Change-Id: I66338ab845103d8e7acd75e196847d9e17050e43
+Signed-off-by: wlq <wlq@rock-chips.com>
+Signed-off-by: Mark Yao <mark.yao@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ minui/graphics.cpp |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/minui/graphics.cpp b/minui/graphics.cpp
+index 968f2b1..5d5d200 100644
+--- a/minui/graphics.cpp
++++ b/minui/graphics.cpp
+@@ -84,7 +84,7 @@ static unsigned int gr_get_row_bytes(GRSurface* surface){
+     if(surface == NULL){
+         return 0;
+     }
+-    return gr_get_draw_width(surface) * 4;
++    return surface->row_bytes;
+ }
+ static bool outside(int x, int y)
+ {
+-- 
+1.7.9.5
+

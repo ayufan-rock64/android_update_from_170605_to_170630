@@ -1,0 +1,25 @@
+From f6c21e5beb7c1e2e48b9af0d3a2488124eca66b1 Mon Sep 17 00:00:00 2001
+From: "sam.lin" <lly@rock-chips.com>
+Date: Wed, 24 May 2017 08:57:21 +0800
+Subject: [PATCH 02/15] To grant  tee operation metadata partition permissions
+
+Change-Id: Id6e6fdf09163ba8bf527de94c55263143335445e
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ sepolicy/tee.te |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/sepolicy/tee.te b/sepolicy/tee.te
+index 05b0144..398d20a 100755
+--- a/sepolicy/tee.te
++++ b/sepolicy/tee.te
+@@ -9,3 +9,5 @@ allow tee uboot_block_device:blk_file { ioctl open read write };
+ allow tee rpmb_block_device:blk_file { ioctl open read write };
+ allow tee self:capability sys_rawio;
+ allow tee block_device:dir { search write open };
++allow tee metadata_file:file {create open read write unlink link};
++allow tee metadata_file:dir {create add_name open read write remove_name rmdir  search getattr};
+-- 
+1.7.9.5
+

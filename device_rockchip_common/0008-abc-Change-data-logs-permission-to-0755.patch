@@ -1,0 +1,44 @@
+From 2e47e48406d8c1f3ad29a794cedfe7bc3183d16c Mon Sep 17 00:00:00 2001
+From: cw <cw@rock-chips.com>
+Date: Thu, 8 Jun 2017 10:36:59 +0800
+Subject: [PATCH 08/15] abc: Change /data/logs permission to 0755
+
+For adbd or shell access when user build
+
+Change-Id: I95ca42bf2f4eb9994fc9b109e4e330d218c55e7f
+Signed-off-by: cw <cw@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ init.rk30board.rc |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/init.rk30board.rc b/init.rk30board.rc
+index 698ffee..247563b 100755
+--- a/init.rk30board.rc
++++ b/init.rk30board.rc
+@@ -40,7 +40,7 @@ on post-fs-data
+     mkdir /data/cifsmanager 777 system system
+     chmod 0666 /dev/opteearmtz00
+ 
+-    mkdir /data/logs 0700 root root
++    mkdir /data/logs 0755 root shell
+ on init
+     # set temperature control policy as normal mode
+     write /sys/module/rockchip_pm/parameters/policy 1
+@@ -222,10 +222,13 @@ on property:ro.boot.noril=true
+ # set ro.serialno
+ on property:sys.serialno=*
+     setprop ro.serialno ${sys.serialno}
++
++# Android bug collector
+ service abc /system/bin/abc
+     class main
+     disabled
+     oneshot
++
+ on property:persist.sys.abc_switch=1
+     start abc
+ on property:persist.sys.abc_switch=0
+-- 
+1.7.9.5
+

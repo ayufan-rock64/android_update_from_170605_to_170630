@@ -1,0 +1,144 @@
+From a5a961089c30e3dc9dac426164535f731e329de3 Mon Sep 17 00:00:00 2001
+From: tug <tug@skyth-tek.com>
+Date: Mon, 4 Sep 2017 15:38:23 +0800
+Subject: [PATCH 11/13] add pin_test DT ;control usb pwr supply when stdby
+
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ arch/arm64/boot/dts/rk3328-box-plus.dts |  105 ++++++++++++++++++++++++++++++-
+ 1 file changed, 103 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/rk3328-box-plus.dts b/arch/arm64/boot/dts/rk3328-box-plus.dts
+index 0609ed2..cb98201 100644
+--- a/arch/arm64/boot/dts/rk3328-box-plus.dts
++++ b/arch/arm64/boot/dts/rk3328-box-plus.dts
+@@ -69,6 +69,13 @@
+ 			default-state = "on";
+ 			mode = <0x23>;
+ 		};
++		//usb switch enable control
++               usb-switch {
++                       gpios = <&gpio0 GPIO_A2 GPIO_ACTIVE_LOW>;
++                       linux,default-trigger = "none";
++                       default-state = "on";
++                       mode = <0x23>;
++               };
+ 
+ 		/*net-green {
+ 			gpios = <&gpio2 GPIO_B7 GPIO_ACTIVE_HIGH>;
+@@ -94,8 +101,8 @@
+ 
+ 	wireless-wlan {
+ 		wifi_chip_type = "rtl8822bs";
+-		WIFI,poweren_gpio = <&gpio3 GPIO_B0 GPIO_ACTIVE_HIGH>;
+-		WIFI,host_wake_irq = <&gpio3 GPIO_A1 GPIO_ACTIVE_HIGH>;
++		//WIFI,poweren_gpio = <&gpio3 GPIO_B0 GPIO_ACTIVE_HIGH>;
++		//WIFI,host_wake_irq = <&gpio3 GPIO_A1 GPIO_ACTIVE_HIGH>;
+ 	};
+ 
+ 	wireless-bluetooth {
+@@ -105,6 +112,100 @@
+ 		BT,wake_host_irq = <&gpio1 GPIO_D2 GPIO_ACTIVE_HIGH>;
+ 		status = "disabled";
+ 	};
++	pin_test {
++               compatible = "pi2-test";
++               status = "disabled";
++               pin3 {
++                       gpios = <&gpio2 GPIO_D1 GPIO_ACTIVE_HIGH>;
++               };
++               pin5 {
++                       gpios = <&gpio2 GPIO_D0 GPIO_ACTIVE_HIGH>;
++               };
++               pin7{
++                       gpios = <&gpio1 GPIO_D4 GPIO_ACTIVE_HIGH>;
++               };
++               //uart_dbg
++               pin8 {
++                       gpios  = <&gpio2 GPIO_A0 GPIO_ACTIVE_HIGH>;
++               };
++               pin10 {
++                       gpios = <&gpio2 GPIO_A1 GPIO_ACTIVE_HIGH>;
++               };
++
++               pin12 {
++                       gpios = <&gpio2 GPIO_A3 GPIO_ACTIVE_HIGH>;
++               };
++               pin13 {
++                       gpios = <&gpio0 GPIO_A0 GPIO_ACTIVE_HIGH>;
++               };
++               pin15 {
++                       gpios = <&gpio3 GPIO_A4 GPIO_ACTIVE_HIGH>;
++               };
++               pin16 {
++                       gpios = <&gpio3 GPIO_A5 GPIO_ACTIVE_HIGH>;
++               };
++               pin18 {
++                       gpios = <&gpio3 GPIO_A6 GPIO_ACTIVE_HIGH>;
++               };
++               pin19 {
++                       gpios = <&gpio3 GPIO_A1 GPIO_ACTIVE_HIGH>;
++               };
++               pin21 {
++                       gpios = <&gpio3 GPIO_A2 GPIO_ACTIVE_HIGH>;
++               };
++               pin22 {
++                       gpios = <&gpio3 GPIO_A7 GPIO_ACTIVE_HIGH>;
++               };
++               pin23 {
++                       gpios = <&gpio3 GPIO_A0 GPIO_ACTIVE_HIGH>;
++               };
++               pin24 {
++                       gpios = <&gpio3 GPIO_B0 GPIO_ACTIVE_HIGH>;
++               };
++               pin26 {
++                       gpios = <&gpio2 GPIO_B4 GPIO_ACTIVE_HIGH>;
++               };
++               //pin27 28 is i2c1 for pmu,no need to test
++               /*pin27 {
++                       gpios = <&gpio2 GPIO_A4 GPIO_ACTIVE_HIGH>;
++               };
++               pin28 {
++                       gpios = <&gpio2 GPIO_A5 GPIO_ACTIVE_HIGH>;
++               };*/
++               //to be added
++               //Pi5
++               pi5_3 {
++                       gpios = <&gpio2 GPIO_C1 GPIO_ACTIVE_HIGH>;
++               };
++               pi5_4 {
++                       gpios = <&gpio2 GPIO_C2 GPIO_ACTIVE_HIGH>;
++               };
++               pi5_5 {
++                       gpios = <&gpio2 GPIO_C7 GPIO_ACTIVE_HIGH>;
++               };
++               pi5_6 {
++                       gpios = <&gpio2 GPIO_C3 GPIO_ACTIVE_HIGH>;
++               };
++               pi5_9 {
++                       gpios = <&gpio2 GPIO_C0 GPIO_ACTIVE_HIGH>;
++               };
++               pi5_10 {
++                       gpios = <&gpio2 GPIO_B7 GPIO_ACTIVE_HIGH>;
++               };
++               pi5_11 {
++                       gpios = <&gpio2 GPIO_C5 GPIO_ACTIVE_HIGH>;
++               };
++               pi5_12 {
++                       gpios = <&gpio2 GPIO_C4 GPIO_ACTIVE_HIGH>;
++		};
++               pi5_13 {
++                       gpios = <&gpio0 GPIO_D3 GPIO_ACTIVE_HIGH>;
++		};
++               pi5_14 {
++                       gpios = <&gpio2 GPIO_C6 GPIO_ACTIVE_HIGH>;
++		};
++	};
++
+ };
+ 
+ &clk_core_dvfs_table {
+-- 
+1.7.9.5
+

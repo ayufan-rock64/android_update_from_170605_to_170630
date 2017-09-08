@@ -1,0 +1,28 @@
+From 456874befcb583cdf5d6893cfc5d2b048b78e20d Mon Sep 17 00:00:00 2001
+From: libin <bin.li@rock-chips.com>
+Date: Mon, 26 Jun 2017 17:38:39 +0800
+Subject: [PATCH 09/13] amend the skip_policy for rk312x_BOX
+
+Change-Id: I2156f7b7d452b3e08b60b34e847fa82b2a95ac42
+Signed-off-by: libin <bin.li@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ rk_hwcomposer.cpp |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/rk_hwcomposer.cpp b/rk_hwcomposer.cpp
+index 2d8af49..b039841 100755
+--- a/rk_hwcomposer.cpp
++++ b/rk_hwcomposer.cpp
+@@ -1223,7 +1223,7 @@ int is_need_skip_this_policy(void*ctx)
+ {
+     hwcContext * context = (hwcContext *)ctx;
+     bool IsBox = false;
+-    if(context->IsRk3128 && context->Is_OverscanEn && context->mScreenChanged)
++    if(context->IsRk3128 && (context->Is_OverscanEn || context->mScreenChanged))
+     {
+         #ifdef RK312X_BOX
+         IsBox = true;
+-- 
+1.7.9.5
+

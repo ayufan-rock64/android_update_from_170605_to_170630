@@ -1,0 +1,29 @@
+From 15bfa0658dd6cdf3b0cf129c09a8959d802f5ecf Mon Sep 17 00:00:00 2001
+From: Hans Yang <yhx@rock-chips.com>
+Date: Fri, 30 Jun 2017 16:36:57 +0800
+Subject: [PATCH 33/35] apps.mk: box: add Lightning browser
+
+Change-Id: I22da553b69f004e24aba124fa70e592185bd6b42
+Signed-off-by: Hans Yang <yhx@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ apps/apps.mk |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/apps/apps.mk b/apps/apps.mk
+index 32c60e3..f5799b0 100755
+--- a/apps/apps.mk
++++ b/apps/apps.mk
+@@ -81,7 +81,8 @@ PRODUCT_PACKAGES += \
+     rkmcapp-armeabi-v7a-debug \
+     ChangeLedStatus \
+     WifiDisplay \
+-    RKDeviceTest
++    RKDeviceTest \
++	Lightning
+   ifeq ($(strip $(BOARD_USE_LOW_MEM256)), true)
+         PRODUCT_PACKAGES += \
+               SimpleLauncher
+-- 
+1.7.9.5
+

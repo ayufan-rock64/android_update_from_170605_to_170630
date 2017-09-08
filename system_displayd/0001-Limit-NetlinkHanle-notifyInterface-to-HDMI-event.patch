@@ -1,0 +1,44 @@
+From 16e41698cfe4c67d072e89bef0c9cc6b03891d7e Mon Sep 17 00:00:00 2001
+From: Zheng Yang <zhengyang@rock-chips.com>
+Date: Fri, 12 May 2017 15:19:27 +0800
+Subject: [PATCH] Limit NetlinkHanle notifyInterface to HDMI event
+
+Now CVBS add/remove will send uevent, but setHDMIEnable/setHDMIDisable
+is only triggered by HDMI uevent.
+
+Change-Id: I58c54e03ae691df81f83975ebd8076923a74bedb
+Signed-off-by: Zheng Yang <zhengyang@rock-chips.com>
+Signed-off-by: xuhuicong <xhc@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ NetlinkHandler.cpp |    7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/NetlinkHandler.cpp b/NetlinkHandler.cpp
+index b8b00c2..d024391 100644
+--- a/NetlinkHandler.cpp
++++ b/NetlinkHandler.cpp
+@@ -109,8 +109,8 @@ void NetlinkHandler::notifyInterfaceAdded(const char *name, const char *screen)
+ 	int display = 0;
+ 	if(screen && !strcmp(screen, "1"))
+ 		display = 1;
+-
+-	mNm->mDisplayManager->setHDMIEnable(display);
++	if (!strncmp(name, "HDMI", 4))
++		mNm->mDisplayManager->setHDMIEnable(display);
+ 	snprintf(msg, sizeof(msg), "Iface added %s", name);
+ 	ALOGW("Send msg %s", msg);
+ 	//    mNm->getBroadcaster()->sendBroadcast(ResponseCode::InterfaceChange,
+@@ -129,7 +129,8 @@ void NetlinkHandler::notifyInterfaceRemoved(const char *name, const char *screen
+ 	int display = 0;
+ 	if(screen && !strcmp(screen, "1"))
+ 		display = 1;
+-	mNm->mDisplayManager->setHDMIDisable(display);
++	if (!strncmp(name, "HDMI", 4))
++		mNm->mDisplayManager->setHDMIDisable(display);
+ 	snprintf(msg, sizeof(msg), "Iface removed %s", name);
+ 	ALOGW("Send msg %s", msg);
+ 	//    mNm->getBroadcaster()->sendBroadcast(ResponseCode::InterfaceChange,
+-- 
+1.7.9.5
+

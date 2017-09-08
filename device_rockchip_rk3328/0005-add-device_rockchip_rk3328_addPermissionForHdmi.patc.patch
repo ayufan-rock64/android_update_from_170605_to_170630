@@ -1,0 +1,27 @@
+From 6d21823c16042e2f226a26c23cb1471cfc18a11b Mon Sep 17 00:00:00 2001
+From: tug <tug@skyth-tek.com>
+Date: Wed, 30 Aug 2017 16:22:07 +0800
+Subject: [PATCH 5/6] add device_rockchip_rk3328_addPermissionForHdmi.patch
+
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ init.box.rc |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/init.box.rc b/init.box.rc
+index 795498d..006eab6 100644
+--- a/init.box.rc
++++ b/init.box.rc
+@@ -7,6 +7,8 @@ on property:sys.boot_completed=1
+     # recover cpu fre.
+     chmod  0644 /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+     write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor interactive
++    chmod 0777 /sys/class/display/HDMI/mode
++    chmod 0777 /sys/class/display/HDMI/color
+ 
+ on init
+     write /proc/sys/vm/swappiness 100
+-- 
+1.7.9.5
+

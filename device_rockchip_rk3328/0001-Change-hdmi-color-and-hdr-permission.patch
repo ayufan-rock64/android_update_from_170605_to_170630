@@ -1,0 +1,29 @@
+From 780e31f70364766e9064ee3e1133e5a56198ebd0 Mon Sep 17 00:00:00 2001
+From: GaoFei <fly.gao@rock-chips.com>
+Date: Tue, 27 Jun 2017 16:08:24 +0800
+Subject: [PATCH 1/6] Change hdmi color and hdr permission. It can make system
+ app to read or write.
+
+Change-Id: Iabecc0281e8a6764f122922939f3f82f5a55c567
+Signed-off-by: GaoFei <fly.gao@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ init.box.rc |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/init.box.rc b/init.box.rc
+index 8229e24..1270891 100644
+--- a/init.box.rc
++++ b/init.box.rc
+@@ -19,3 +19,8 @@ on boot
+     write /dev/cpuset/background/cpus 0
+     write /dev/cpuset/system-background/cpus 0-3
+     write /dev/cpuset/top-app/cpus 0-3
++    chown root system /sys/class/display/HDMI/color
++    chown root system /sys/class/graphics/fb0/hdr_bt1886eotf
++    chmod 0664 /sys/class/graphics/fb0/hdr_bt1886eotf
++    chown root system /sys/class/graphics/fb0/hdr_st2084oetf
++    chmod 0664 /sys/class/graphics/fb0/hdr_st2084oetf
+-- 
+1.7.9.5
+

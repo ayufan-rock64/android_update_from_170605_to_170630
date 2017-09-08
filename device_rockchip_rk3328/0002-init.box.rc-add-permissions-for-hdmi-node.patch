@@ -1,0 +1,28 @@
+From df6fded2d890d822df94d14667eb8e5a1ad7a1f5 Mon Sep 17 00:00:00 2001
+From: Hans Yang <yhx@rock-chips.com>
+Date: Thu, 29 Jun 2017 17:16:36 +0800
+Subject: [PATCH 2/6] init.box.rc: add permissions for hdmi node
+
+Change-Id: I078deac4304795e7ce52cabbb21d9562af9a3a7a
+Signed-off-by: Hans Yang <yhx@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ init.box.rc |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/init.box.rc b/init.box.rc
+index 1270891..795498d 100644
+--- a/init.box.rc
++++ b/init.box.rc
+@@ -20,6 +20,8 @@ on boot
+     write /dev/cpuset/system-background/cpus 0-3
+     write /dev/cpuset/top-app/cpus 0-3
+     chown root system /sys/class/display/HDMI/color
++    chmod 0666 /sys/class/display/HDMI/color
++    chmod 0666 /sys/class/display/HDMI/mode
+     chown root system /sys/class/graphics/fb0/hdr_bt1886eotf
+     chmod 0664 /sys/class/graphics/fb0/hdr_bt1886eotf
+     chown root system /sys/class/graphics/fb0/hdr_st2084oetf
+-- 
+1.7.9.5
+

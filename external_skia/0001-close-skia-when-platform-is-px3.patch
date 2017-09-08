@@ -1,0 +1,35 @@
+From a818d3fbe33e444e160a6395ff0e91ec2aa7688c Mon Sep 17 00:00:00 2001
+From: sxj <sxj@rock-chips.com>
+Date: Wed, 24 May 2017 09:41:55 +0800
+Subject: [PATCH] close skia when platform is px3.
+
+Change-Id: Ibbe2418fc2c8fd60c6efe6b71d4327762b5d116e
+Signed-off-by: sxj <sxj@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ Android.mk |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/Android.mk b/Android.mk
+index ba43da1..6f21c2a 100755
+--- a/Android.mk
++++ b/Android.mk
+@@ -719,11 +719,15 @@ LOCAL_C_INCLUDES := \
+ 	external/dng_sdk \
+ 	external/piex
+ 
++ifneq ($(filter px3%, $(PRODUCT_BUILD_MODULE)), )
++
++else
+ LOCAL_SHARED_LIBRARIES += libjpeghwdec
+ LOCAL_C_INCLUDES += hardware/rockchip/jpeghw/release/decoder_release \
+ 		hardware/rockchip/librkvpu
+ LOCAL_CFLAGS += -DUSE_HW_JPEG
+ LOCAL_SRC_FILES += src/images/SkHwJpegUtility.cpp
++endif
+ 
+ LOCAL_EXPORT_C_INCLUDE_DIRS := \
+ 	$(LOCAL_PATH)/include/codec \
+-- 
+1.7.9.5
+

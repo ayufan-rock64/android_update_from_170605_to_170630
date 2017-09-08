@@ -1,0 +1,113 @@
+From cac8c8c7962456ec8d0ca960ad76de604f2c1cea Mon Sep 17 00:00:00 2001
+From: Hans Yang <yhx@rock-chips.com>
+Date: Thu, 25 May 2017 14:48:13 +0800
+Subject: [PATCH 03/15] add RK3128 product support adjust parameter.txt path
+ for RK3128 and RK3126C
+
+Change-Id: Ic743936a0a1dc3b36eea6ddfa626055318d01058
+Signed-off-by: Hans Yang <yhx@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ 20050030_pwm.kl |   29 -----------------------------
+ device.mk       |   12 +++++-------
+ mkimage.sh      |    4 +++-
+ 3 files changed, 8 insertions(+), 37 deletions(-)
+ delete mode 100755 20050030_pwm.kl
+
+diff --git a/20050030_pwm.kl b/20050030_pwm.kl
+deleted file mode 100755
+index cd3fa2a..0000000
+--- a/20050030_pwm.kl
++++ /dev/null
+@@ -1,29 +0,0 @@
+-#$_FOR_ROCKCHIP_RBOX_$
+-#$_rbox_$_modify_$_chenzhi_20120220: add for IR remote
+-
+-key 28    ENTER
+-key 116   POWER             WAKE
+-key 158   BACK              
+-key 139   MENU         
+-key 217   SEARCH             
+-key 232   DPAD_CENTER       
+-key 108   DPAD_DOWN         
+-key 103   DPAD_UP           
+-key 102   HOME              
+-key 105   DPAD_LEFT         
+-key 106   DPAD_RIGHT        
+-key 115   VOLUME_UP
+-key 114   VOLUME_DOWN
+-key 143   NOTIFICATION      WAKE
+-key 113   VOLUME_MUTE
+-#key 388   TV_KEYMOUSE_MODE_SWITCH
+-#key 400   TV_MEDIA_MULT_BACKWARD
+-#key 401   TV_MEDIA_MULT_FORWARD
+-#key 402   TV_MEDIA_PLAY_PAUSE
+-#key 64    TV_MEDIA_PLAY
+-#key 65    TV_MEDIA_PAUSE
+-#key 66    TV_MEDIA_STOP
+-#key 67    TV_MEDIA_REWIND
+-#key 68    TV_MEDIA_FAST_FORWARD
+-#key 87    TV_MEDIA_PREVIOUS
+-#key 88    TV_MEDIA_NEXT
+diff --git a/device.mk b/device.mk
+index 8f17af7..ddf3192 100755
+--- a/device.mk
++++ b/device.mk
+@@ -100,7 +100,6 @@ PRODUCT_COPY_FILES += \
+     device/rockchip/common/ueventd.rockchip.rc:root/ueventd.$(TARGET_BOARD_HARDWARE).rc \
+     device/rockchip/common/media_profiles_default.xml:system/etc/media_profiles_default.xml \
+     device/rockchip/common/rk29-keypad.kl:system/usr/keylayout/rk29-keypad.kl \
+-    device/rockchip/common/20050030_pwm.kl:system/usr/keylayout/20050030_pwm.kl \
+     device/rockchip/common/ff680030_pwm.kl:system/usr/keylayout/ff680030_pwm.kl \
+      device/rockchip/common/alarm_filter.xml:system/etc/alarm_filter.xml \
+ 	device/rockchip/common/ff420030_pwm.kl:system/usr/keylayout/ff420030_pwm.kl
+@@ -263,7 +262,7 @@ PRODUCT_PACKAGES += \
+     akmd 
+ 
+ # iep
+-ifneq ($(filter rk3188 rk3190 rk3026 rk3288 rk312x rk3126c rk3368 rk3328 rk3366 rk3399, $(strip $(TARGET_BOARD_PLATFORM))), )
++ifneq ($(filter rk3188 rk3190 rk3026 rk3288 rk312x rk3126c rk3128 rk3368 rk3328 rk3366 rk3399, $(strip $(TARGET_BOARD_PLATFORM))), )
+ BUILD_IEP := true
+ PRODUCT_PACKAGES += \
+     libiep
+@@ -670,18 +669,17 @@ endif
+ #for enable optee support
+ ifeq ($(strip $(PRODUCT_HAVE_OPTEE)),true)
+ PRODUCT_PROPERTY_OVERRIDES += \
+-	ro.enable.optee=true		
++       ro.enable.optee=true
+ ifeq ($(strip $(PRODUCT_SYSTEM_VERITY)),true)
+ PRODUCT_COPY_FILES += \
+-	device/rockchip/common/init.optee_verify.rc:root/init.optee.rc
++       device/rockchip/common/init.optee_verify.rc:root/init.optee.rc
+ else
+ PRODUCT_COPY_FILES += \
+-	device/rockchip/common/init.optee.rc:root/init.optee.rc
+-
++       device/rockchip/common/init.optee.rc:root/init.optee.rc
+ endif
+-
+ endif
+ 
++
+ ifeq ($(strip $(BOARD_ENABLE_PMS_MULTI_THREAD_SCAN)), true)
+ PRODUCT_PROPERTY_OVERRIDES += \
+ 	ro.pms.multithreadscan=true		
+diff --git a/mkimage.sh b/mkimage.sh
+index 9b6d5a7..d7b1fd6 100755
+--- a/mkimage.sh
++++ b/mkimage.sh
+@@ -54,7 +54,9 @@ elif [[ $TARGET_BOARD_PLATFORM = "rk3368" ]]; then
+                 PARAMETER=device/rockchip/$TARGET_BOARD_PLATFORM/parameter.txt
+         fi
+ elif [[ $TARGET_BOARD_PLATFORM = "rk3126c" ]]; then
+-    PARAMETER=device/rockchip/rk312x/parameter.txt
++    PARAMETER=device/rockchip/rk312x/rk3126c/parameter.txt
++elif [[ $TARGET_BOARD_PLATFORM = "rk3128" ]]; then
++    PARAMETER=device/rockchip/rk312x/rk3128_box/parameter.txt
+ else
+ 	if [[ $TARGET_PRODUCT = "px5" || $TARGET_PRODUCT = "px3" ]]; then
+ 		PARAMETER=device/rockchip/$TARGET_PRODUCT/parameter.txt
+-- 
+1.7.9.5
+

@@ -1,0 +1,30 @@
+From 471f52d19a673524af54369fbbe2d84011876cb8 Mon Sep 17 00:00:00 2001
+From: Zhaoyifeng <zyf@rock-chips.com>
+Date: Wed, 21 Jun 2017 17:39:57 +0800
+Subject: [PATCH 01/13] drivers: soc: rockchip: fix vendor storage incorrect
+ initialization issue
+
+Change-Id: Ic8d144585a595f26eba6d62f5bd9d8220b0f6d25
+Signed-off-by: Zhaoyifeng <zyf@rock-chips.com>
+(cherry picked from commit b824c2a1a658a9e9a20935b5aa93a38f319de96d)
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ drivers/soc/rockchip/sdmmc_vendor_storage.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/soc/rockchip/sdmmc_vendor_storage.c b/drivers/soc/rockchip/sdmmc_vendor_storage.c
+index 9ee902b..84b8fa4 100644
+--- a/drivers/soc/rockchip/sdmmc_vendor_storage.c
++++ b/drivers/soc/rockchip/sdmmc_vendor_storage.c
+@@ -128,7 +128,7 @@ static int emmc_vendor_storage_init(void)
+ 				EMMC_VENDOR_PART_SIZE, 0))
+ 			goto error_exit;
+ 	} else {
+-		memset((void *)g_vendor, 0, sizeof(g_vendor));
++		memset((void *)g_vendor, 0, sizeof(*g_vendor));
+ 		g_vendor->version = 1;
+ 		g_vendor->tag = EMMC_VENDOR_TAG;
+ 		g_vendor->version2 = g_vendor->version;
+-- 
+1.7.9.5
+

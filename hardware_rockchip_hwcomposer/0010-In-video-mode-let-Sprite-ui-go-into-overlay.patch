@@ -1,0 +1,41 @@
+From ee2519a14ec7c197dc7afbaa2ddc144ccc5d2edc Mon Sep 17 00:00:00 2001
+From: ZhuangXiaoLiang <zhuangxl@rock-chips.com>
+Date: Tue, 27 Jun 2017 19:25:55 +0800
+Subject: [PATCH 10/13] In video mode,let Sprite ui go into overlay.
+
+Change-Id: Ie3193a689bc6117171cae5b9ceca5cb8d19493df
+Signed-off-by: dawnming.huang <dawnming.huang@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ rk_hwcomposer.cpp |   15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/rk_hwcomposer.cpp b/rk_hwcomposer.cpp
+index b039841..561f136 100755
+--- a/rk_hwcomposer.cpp
++++ b/rk_hwcomposer.cpp
+@@ -1330,11 +1330,16 @@ int try_hwc_vop_policy(void * ctx,hwc_display_contents_1_t *list)
+             if(/*context->vop_mbshake && */context->Is_video || (context->special_app && i == 1 &&
+                 list->numHwLayers == 3) || forceUiDetect)
+             {
+-                int ret = DetectValidData(context,(int *)handle->base,handle->width,handle->height); 
+-                if(ret) // ui need display
+-                {
+-                    return -1;
+-                }  
++               if(!strstr(layer->LayerName,"cursor") && !strstr(layer->LayerName,"Sprite"))
++               {
++                       int ret = DetectValidData(context,(int *)handle->base,handle->width,handle->height);
++                       if(ret) // ui need display
++                       {
++                               if(is_out_log())
++                                       ALOGD("line=%d,layer=%s is invalid data",layer->LayerName,__LINE__);
++                               return -1;
++                       }
++               }
+             }
+             #endif
+ 
+-- 
+1.7.9.5
+

@@ -1,0 +1,26 @@
+From 3ba4e795e0dbd987cf2ce96bb9df8a4b25da8d73 Mon Sep 17 00:00:00 2001
+From: tug <tug@skyth-tek.com>
+Date: Wed, 30 Aug 2017 16:21:42 +0800
+Subject: [PATCH 4/6] add keylayout DEL key for remote control
+
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ ff1b0030_pwm.kl |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/ff1b0030_pwm.kl b/ff1b0030_pwm.kl
+index 83527a2..ddf09af 100755
+--- a/ff1b0030_pwm.kl
++++ b/ff1b0030_pwm.kl
+@@ -17,6 +17,7 @@ key 114   VOLUME_DOWN
+ key 143   NOTIFICATION    
+ key 113   VOLUME_MUTE
+ key 388   TV_KEYMOUSE_MODE_SWITCH
++key 111   DEL
+ key 2     1
+ key 3     2
+ key 4     3
+-- 
+1.7.9.5
+

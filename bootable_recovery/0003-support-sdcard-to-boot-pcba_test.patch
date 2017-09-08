@@ -1,0 +1,35 @@
+From 4ab03c45d520c29a884085ad707005322749a9b2 Mon Sep 17 00:00:00 2001
+From: "jkand.huang" <jkand.huang@rock-chips.com>
+Date: Thu, 1 Jun 2017 18:05:11 +0800
+Subject: [PATCH 3/7] support sdcard to boot pcba_test.
+
+Change-Id: I0a12914043f9c7d26155dd8d8ba4acca59364f93
+Signed-off-by: jkand.huang <jkand.huang@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ recovery.cpp |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/recovery.cpp b/recovery.cpp
+index 95fbc28..db064a7 100755
+--- a/recovery.cpp
++++ b/recovery.cpp
+@@ -96,6 +96,7 @@ static const struct option OPTIONS[] = {
+   { "wipe_package_size", required_argument, NULL, 0 },
+   { "resize_partition", required_argument, NULL, 'r'+'p' },
+   { "factory_mode", required_argument, NULL, 'f' },
++  { "pcba_test", required_argument, NULL, 'p'+'t' },
+   { NULL, 0, NULL, 0 },
+ };
+ 
+@@ -1750,6 +1751,7 @@ int main(int argc, char **argv) {
+             }
+             break;
+         case 'f': factory_mode = optarg; break;
++        case 'p'+'t': factory_mode = optarg; break;
+         case '?':
+             LOGE("Invalid command argument\n");
+             continue;
+-- 
+1.7.9.5
+

@@ -1,0 +1,69 @@
+From 99c670b949f0ee6daa62ebee13e3082cf7505fb7 Mon Sep 17 00:00:00 2001
+From: tug <tug@skyth-tek.com>
+Date: Mon, 4 Sep 2017 15:39:36 +0800
+Subject: [PATCH 12/13] use emmc boot by default and set #if 1; use sd boot
+ then set #if 0
+
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ drivers/mmc/host/rk_sdmmc.c |    8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/mmc/host/rk_sdmmc.c b/drivers/mmc/host/rk_sdmmc.c
+index 2c3f5af..4431c66 100644
+--- a/drivers/mmc/host/rk_sdmmc.c
++++ b/drivers/mmc/host/rk_sdmmc.c
+@@ -3182,6 +3182,7 @@ static int dw_mci_of_get_wp_gpio(struct device *dev, u8 slot)
+ }
+ 
+ /* find the cd gpio for a given slot */
++#if 1
+ static void dw_mci_of_get_cd_gpio(struct device *dev, u8 slot,
+ 					struct mmc_host *mmc)
+ {
+@@ -3200,7 +3201,7 @@ static void dw_mci_of_get_cd_gpio(struct device *dev, u8 slot,
+ 	if (mmc_gpio_request_cd(mmc, gpio, 0))
+ 		dev_warn(dev, "gpio [%d] request failed\n", gpio);
+ }
+-
++#endif
+ static irqreturn_t dw_mci_gpio_cd_irqt(int irq, void *dev_id)
+ {
+         struct mmc_host *mmc = dev_id;
+@@ -4227,6 +4228,7 @@ int dw_mci_suspend(struct dw_mci *host)
+ 		regulator_disable(host->vmmc);
+ 
+ 	/* Only for sdmmc controller */
++	#if 1
+ 	if (host->mmc->restrict_caps & RESTRICT_CARD_TYPE_SD) {
+ 		disable_irq(host->irq);
+ 			if (pinctrl_select_state(host->pinctrl, host->pins_idle) < 0)
+@@ -4240,7 +4242,7 @@ int dw_mci_suspend(struct dw_mci *host)
+                         enable_irq_wake(host->mmc->slot.cd_irq);
+                 }
+         }
+-
++	#endif
+ 	mci_writel(host, RINTSTS, 0xFFFFFFFF);
+ 	mci_writel(host, INTMASK, 0x00);
+ 	mci_writel(host, CTRL, 0x00);
+@@ -4278,6 +4280,7 @@ int dw_mci_resume(struct dw_mci *host)
+         }
+ 
+     	/*only for sdmmc controller*/
++	#if 1
+ 	if (host->mmc->restrict_caps & RESTRICT_CARD_TYPE_SD) {
+                 /* Soc rk3126/3036 already in gpio_cd mode */
+                 if (!soc_is_rk3126() && !soc_is_rk3126b() && !soc_is_rk3036()) {
+@@ -4317,6 +4320,7 @@ int dw_mci_resume(struct dw_mci *host)
+                         /* RK3036_GRF_SOC_CON0 is compatible with rk312x, tmp setting */
+                         grf_writel(((1 << 8) << 16) | (0 << 8), RK3036_GRF_SOC_CON0);
+ 	}
++	#endif
+ 	if (host->vmmc) {
+ 		ret = regulator_enable(host->vmmc);
+ 		if (ret){
+-- 
+1.7.9.5
+

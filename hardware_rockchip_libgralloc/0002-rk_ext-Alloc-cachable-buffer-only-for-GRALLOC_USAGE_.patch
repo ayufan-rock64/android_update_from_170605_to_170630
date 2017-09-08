@@ -1,0 +1,47 @@
+From a74df7544695ef7fc8bba8e4be338d750519be7e Mon Sep 17 00:00:00 2001
+From: chenzhen <chenzhen@rock-chips.com>
+Date: Thu, 25 May 2017 17:47:36 +0800
+Subject: [PATCH 2/2] rk_ext: Alloc cachable buffer only for
+ GRALLOC_USAGE_SW_READ_OFTEN, not for
+ GRALLOC_USAGE_SW_WRITE_OFTEN
+
+Fix a program mistake in addition.
+
+Change-Id: I4ce0cb85c721f2b946861af67d1799cc81e849d9
+Signed-off-by: chenzhen <chenzhen@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ alloc_device.cpp |    9 +--------
+ 1 file changed, 1 insertion(+), 8 deletions(-)
+
+diff --git a/alloc_device.cpp b/alloc_device.cpp
+index aaeb017..92d4cd9 100755
+--- a/alloc_device.cpp
++++ b/alloc_device.cpp
+@@ -51,11 +51,6 @@
+ 
+ #define GRALLOC_ALIGN( value, base ) (((value) + ((base) - 1)) & ~((base) - 1))
+ 
+-static bool has_usage_flags(unsigned int usage, unsigned int flags)
+-{
+-	return (0 != (usage & flags) );
+-}
+-
+ #if GRALLOC_SIMULATE_FAILURES
+ #include <cutils/properties.h>
+ 
+@@ -137,10 +132,8 @@ static int gralloc_alloc_buffer(alloc_device_t *dev, size_t size, int usage, buf
+ 		rockchip_heap_fix_by_platform(&heap_mask);
+ 
+ #ifndef TARGET_BOARD_PLATFORM_RK3188
+-		if ( has_usage_flags(usage, GRALLOC_USAGE_SW_WRITE_OFTEN)
+-				|| has_usage_flags(usage, GRALLOC_USAGE_SW_READ_OFTEN) )
++		if ((usage & GRALLOC_USAGE_SW_READ_MASK) == GRALLOC_USAGE_SW_READ_OFTEN)
+ 		{
+-			D("to ask for cachable buffer for CPU access, usage : 0x%x", usage);
+ 			flags = ION_FLAG_CACHED | ION_FLAG_CACHED_NEEDS_SYNC;
+ 		}
+ #endif
+-- 
+1.7.9.5
+

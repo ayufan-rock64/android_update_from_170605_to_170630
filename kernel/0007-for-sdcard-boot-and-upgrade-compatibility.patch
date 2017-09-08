@@ -1,0 +1,27 @@
+From 18466d0d689db5eee9652a94f71fadba7ddf36ec Mon Sep 17 00:00:00 2001
+From: tug <tug@skyth-tek.com>
+Date: Tue, 15 Aug 2017 20:16:21 +0800
+Subject: [PATCH 07/13] for sdcard boot and upgrade compatibility
+
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ block/partitions/rk.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/block/partitions/rk.c b/block/partitions/rk.c
+index cc113ed..c0d7b56 100755
+--- a/block/partitions/rk.c
++++ b/block/partitions/rk.c
+@@ -285,7 +285,7 @@ static void rkpart_bootmode_fixup(void)
+ 	if (strstr(saved_command_line, "androidboot.mode=charger")) {
+ 		new_command_line = kzalloc(saved_command_line_len + strlen(charger) + 1, GFP_KERNEL);
+ 		sprintf(new_command_line, "%s%s", saved_command_line, charger);
+-	} else if(strstr(saved_command_line, "storagemedia=sd")) {
++	 } else if(strstr(saved_command_line, "storagemedia=sd") && !(strstr(saved_command_line, "sdfwupdate"))) {
+ 		new_command_line = kzalloc(saved_command_line_len + strlen(sd) + 1, GFP_KERNEL);
+ 		sprintf(new_command_line, "%s%s", saved_command_line, sd);
+ 	} else {
+-- 
+1.7.9.5
+

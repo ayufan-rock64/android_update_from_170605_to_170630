@@ -1,0 +1,28 @@
+From f551c4d5c446ae275f85ff7dbd2c9036668bd15e Mon Sep 17 00:00:00 2001
+From: "jkand.huang" <jkand.huang@rock-chips.com>
+Date: Fri, 26 May 2017 16:46:02 +0800
+Subject: [PATCH 1/3] Makefile:support recovery to high resolution. ~~again~~
+
+Change-Id: I3db9d0761c1eaada12a6cf2db94ff3d56e5adba0
+Signed-off-by: jkand.huang <jkand.huang@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ core/Makefile |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index 83d4d1b..68e0110 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -890,7 +890,7 @@ endif
+ # can be overridden for a particular device by putting a font.png in
+ # its private recovery resources.
+ 
+-ifneq (,$(filter xxxhdpi 560dpi xxhdpi 400dpi xhdpi,tvdpi,$(recovery_density)))
++ifneq (,$(filter xxxhdpi 560dpi xxhdpi 400dpi xhdpi tvdpi,$(recovery_density)))
+ recovery_font := $(call include-path-for, recovery)/fonts/18x32.png
+ else
+ recovery_font := $(call include-path-for, recovery)/fonts/12x22.png
+-- 
+1.7.9.5
+

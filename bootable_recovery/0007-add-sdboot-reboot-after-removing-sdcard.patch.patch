@@ -1,0 +1,40 @@
+From 583fb3e309548973485959d7b9f0892829d409a2 Mon Sep 17 00:00:00 2001
+From: tug <tug@skyth-tek.com>
+Date: Thu, 6 Jul 2017 16:06:27 +0800
+Subject: [PATCH 7/7] add sdboot-reboot-after-removing-sdcard.patch support
+ sdboot & sdcard update
+
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ roots.cpp |   10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/roots.cpp b/roots.cpp
+index f674f70..ee88e12 100755
+--- a/roots.cpp
++++ b/roots.cpp
+@@ -42,12 +42,18 @@ extern struct selabel_handle *sehandle;
+ void load_volume_table()
+ {
+     int i;
+-    int ret;
++    int ret,fd;
++    char *s = NULL;
++    char cmdline[1024];
++    fd= open("/proc/cmdline", O_RDONLY);
++    ret = read(fd,(char*)cmdline, 1024);
++    LOGE("TUG :get cmdline=%s\n",cmdline);
++    s = strstr(cmdline , "sdfwupdate");
+ 
+     int emmcState = getEmmcState();
+     if (emmcState == 2) {
+ 	fstab = fs_mgr_read_fstab("/etc/recovery.nvme.fstab");
+-    } else if(emmcState == 1) {
++    } else if(emmcState == 1 || s != NULL) {
+         fstab = fs_mgr_read_fstab("/etc/recovery.emmc.fstab");
+     } else if(emmcState == 3) {
+         fstab = fs_mgr_read_fstab("/etc/recovery.sd.fstab");
+-- 
+1.7.9.5
+

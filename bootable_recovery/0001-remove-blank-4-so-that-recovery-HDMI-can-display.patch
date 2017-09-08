@@ -1,0 +1,30 @@
+From cd453ee95a405e52764a8e9b3678e701191130eb Mon Sep 17 00:00:00 2001
+From: "jkand.huang" <jkand.huang@rock-chips.com>
+Date: Fri, 26 May 2017 16:41:12 +0800
+Subject: [PATCH 1/7] remove blank = 4, so that recovery HDMI can display.
+
+Change-Id: I6c3bb2e376002b0ece37863cfda0c334cb88e3d7
+Signed-off-by: jkand.huang <jkand.huang@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ minui/graphics_fbdev.cpp |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/minui/graphics_fbdev.cpp b/minui/graphics_fbdev.cpp
+index a8b598b..cdc129d 100644
+--- a/minui/graphics_fbdev.cpp
++++ b/minui/graphics_fbdev.cpp
+@@ -129,6 +129,10 @@ static void fbdev_blank(minui_backend* backend __unused, bool blank)
+ {
+     int ret;
+ 
++    if(blank){
++        printf("blank = 4, return from fbdev_blank.\n");
++        return ;
++    }
+     ret = ioctl(fb_fd, FBIOBLANK, blank ? FB_BLANK_POWERDOWN : FB_BLANK_UNBLANK);
+     if (ret < 0)
+         perror("ioctl(): blank");
+-- 
+1.7.9.5
+

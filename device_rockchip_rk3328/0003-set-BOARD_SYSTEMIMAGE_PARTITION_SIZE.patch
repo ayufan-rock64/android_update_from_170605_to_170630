@@ -1,0 +1,49 @@
+From c0a01a791731d200468c125c0ae4448e35b967b1 Mon Sep 17 00:00:00 2001
+From: tug <tug@skyth-tek.com>
+Date: Thu, 6 Jul 2017 19:45:08 +0800
+Subject: [PATCH 3/6] set BOARD_SYSTEMIMAGE_PARTITION_SIZE
+
+
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ BoardConfig.mk                 |    2 +-
+ rk3328_box/.BoardConfig.mk.swp |  Bin 12288 -> 0 bytes
+ 2 files changed, 1 insertion(+), 1 deletion(-)
+ delete mode 100755 rk3328_box/.BoardConfig.mk.swp
+
+diff --git a/BoardConfig.mk b/BoardConfig.mk
+index 152721b..e909294 100755
+--- a/BoardConfig.mk
++++ b/BoardConfig.mk
+@@ -48,7 +48,7 @@ MALLOC_SVELTE := true
+ GRAPHIC_MEMORY_PROVIDER := dma_buf
+ 
+ //MAX-SIZE=800M, for generate out/.../system.img
+-BOARD_SYSTEMIMAGE_PARTITION_SIZE := 1208860800
++BOARD_SYSTEMIMAGE_PARTITION_SIZE := 2013265920
+ 
+ DEVICE_PACKAGE_OVERLAYS += device/rockchip/rk3328/overlay
+ 
+diff --git a/rk3328_box/.BoardConfig.mk.swp b/rk3328_box/.BoardConfig.mk.swp
+deleted file mode 100755
+index 91447f20775fef5cfb711d764c217aebbc7be3e0..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 12288
+zcmeI&L2lDP6b9gF_60;G7OV_if#kTcp+QJ2oY;k+rm?1Ww$|95v~ChRa-Ap?3B(!L
+zZ~$&lj=&ZqxC2X0z=k)%k&2awHPvtF*U0aUpW|<5#nIld*Vo$3M~seJj3p<Zhi7-c
+zG}4a^_UbfN)qft`(H+-o>BlY~x?FGVTk9`*Lj#R8%VZJGiu_E*<+)LeEo=Wt__*0J
+z61hlYX%u-pj!)B>YMJJ;TEZw_8l7AeNjJ|%=}B`sUVjr*Apn650^7_oTYIXxd;gxc
+zb353u4`m2I00Izz00bZa0SG|gItrAtE%ufktWiDOPPJ~;*6I`s1Rwwb2tWV=5P$##
+zAOHafKmY>&p@2vj`?<|naD#q4{r|su|NnlIv2T=1$_L6jN=A7}c}RIcxkLFy*ZrV;
+zrF^1XQr=TuQ!XfKu1~=M0SG_<0uX=z1Rwwb2tWV=*HFN>`E%C~I|G|Lp?7He2Ls*@
+zJw9-PuCG0PrqRdTjCF$Ep%c3OfHn-cDv!kET(Vt_OI>Cnnn+Df=Mz!pg*KvCrXHmw
+zy-)rbZyq^e*9*d-&3pEdnp^MKou0YAT&vo=`(nc!)l$1xv;V%M7UxANm%3=L`n6G-
+zD5i_HF7!<1+0{KXQ}tFQHTJmgscKow<<)Za6l%8=QCe$Nb5uuPv;|{n7Ek7h)HZxh
+IU;BpsH#5?=>;M1&
+
+-- 
+1.7.9.5
+

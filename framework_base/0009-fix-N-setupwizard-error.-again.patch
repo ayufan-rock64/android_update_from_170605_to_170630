@@ -1,0 +1,41 @@
+From f220f166bdd99a6ac0395ff6eeadaa4d86d20ca9 Mon Sep 17 00:00:00 2001
+From: "jkand.huang" <jkand.huang@rock-chips.com>
+Date: Sat, 20 May 2017 12:36:01 +0800
+Subject: [PATCH 09/14] fix N setupwizard error.  ~~ again ~~
+
+Change-Id: I5741a23ec4f953a2a4fbf858100332fc6816f816
+Signed-off-by: jkand.huang <jkand.huang@rock-chips.com>
+Signed-off-by: tug <tug@skyth-tek.com>
+---
+ core/java/android/os/AsyncTask.java |   15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/core/java/android/os/AsyncTask.java b/core/java/android/os/AsyncTask.java
+index fea64ec..2c89f1d 100644
+--- a/core/java/android/os/AsyncTask.java
++++ b/core/java/android/os/AsyncTask.java
+@@ -495,6 +495,21 @@ public abstract class AsyncTask<Params, Progress, Result> {
+      * @see #onCancelled(Object)
+      */
+     public final boolean cancel(boolean mayInterruptIfRunning) {
++        java.lang.StackTraceElement stackTrace[] = new java.lang.Throwable().getStackTrace();
++        for(int i = 0; i < stackTrace.length; i ++) {
++            String classMethodName = stackTrace[i].getClassName()+"."+stackTrace[i].getMethodName();
++
++            //"com.google.android.gms.auth.frp.FrpClient.isChallengeSupported"
++            if(classMethodName.contains("com.google.android.setupwizard.util.FrpHelper")) {
++                android.util.Log.w(LOG_TAG, "add by jkand.huang --- Setupwizard FrpHelper canceled this task, getStatus()="+getStatus());
++                return false;
++            }
++
++            if(classMethodName.contains("com.google.android.setupwizard.account.CheckFrpFragment")) {
++                android.util.Log.w(LOG_TAG, "add by jkand.huang --- Setupwizard CheckFrpFragment canceled this task, getStatus()="+getStatus());
++                return false;
++            }
++        }
+         mCancelled.set(true);
+         return mFuture.cancel(mayInterruptIfRunning);
+     }
+-- 
+1.7.9.5
+
